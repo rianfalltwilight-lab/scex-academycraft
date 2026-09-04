@@ -45,9 +45,24 @@ import com.mohistmc.academy.world.item.TerminalInstaller;
 import com.mohistmc.academy.world.item.Tutorial;
 import com.mohistmc.academy.world.item.Wafer;
 import com.mohistmc.academy.world.item.WindgenFan;
+import com.mohistmc.academy.world.item.AcademyItem;
+import com.mohistmc.academy.world.item.AirJetDeviceItem;
+import com.mohistmc.academy.world.item.AvalonItem;
+import com.mohistmc.academy.world.item.CpPotionItem;
+import com.mohistmc.academy.world.item.DropItemMagnetItem;
+import com.mohistmc.academy.world.item.ElectricaliburItem;
+import com.mohistmc.academy.world.item.EnergyUnitGroup;
+import com.mohistmc.academy.world.item.HandheldTeleporterItem;
+import com.mohistmc.academy.world.item.ImagEnergyArmorItem;
+import com.mohistmc.academy.world.item.LaserGunItem;
+import com.mohistmc.academy.world.item.PaperArmorItem;
+import com.mohistmc.academy.world.item.PaperPlaneItem;
+import com.mohistmc.academy.world.item.RayTwisterItem;
+import com.mohistmc.academy.world.item.ResonanceArmorItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -88,6 +103,51 @@ public class AcademyItems {
     public static final DeferredItem<Item> FACTOR_VECMANIP = ITEMS.register("factor_vecmanip", FactorVecmanip::new);
     public static final DeferredItem<Item> FACTOR_AEROHAND = ITEMS.register("factor_aerohand", FactorAerohand::new);
     public static final DeferredItem<Item> FACTOR_TELEKINESIS = ITEMS.register("factor_telekinesis", FactorTelekinesis::new);
+
+    // ExtraAcC 1.12.2 clean-room compatibility layer. Registry names retain
+    // the add-on's save/recipe vocabulary even though the content now ships
+    // in the unified academy namespace.
+    public static final DeferredItem<Item> OPTICAL_CHIP = ITEMS.register("optical_chip",
+            () -> new AcademyItem(new Item.Properties()));
+    public static final DeferredItem<Item> LASOR_COMPONENT = ITEMS.register("lasor_component",
+            () -> new AcademyItem(new Item.Properties()));
+    public static final DeferredItem<Item> ETCHED_COBBLESTONE = ITEMS.register("etched_cobblestone",
+            () -> new AcademyItem(new Item.Properties()));
+    public static final DeferredItem<Item> RAY_TWISTER = ITEMS.register("ray_twister", RayTwisterItem::new);
+    public static final DeferredItem<Item> ENERGY_UNIT_GROUP = ITEMS.register("energy_unit_group", EnergyUnitGroup::new);
+    public static final DeferredItem<Item> ELECTRICALIBUR = ITEMS.register("electricalibur", ElectricaliburItem::new);
+    public static final DeferredItem<Item> AVALON = ITEMS.register("avalon", AvalonItem::new);
+    public static final DeferredItem<Item> CP_POTION = ITEMS.register("cp_potion", CpPotionItem::new);
+    public static final DeferredItem<Item> LASOR_GUN = ITEMS.register("lasor_gun", LaserGunItem::new);
+    public static final DeferredItem<Item> AIR_JET = ITEMS.register("air_jet", AirJetDeviceItem::new);
+    public static final DeferredItem<Item> TELEPORTER_DEVICE = ITEMS.register("teleporter", HandheldTeleporterItem::new);
+    public static final DeferredItem<Item> PAPER_PLANE = ITEMS.register("paper_plane", PaperPlaneItem::new);
+    public static final DeferredItem<Item> DROP_ITEM_MAGNET = ITEMS.register("drop_item_magnet", DropItemMagnetItem::new);
+
+    public static final DeferredItem<Item> RESO_HELMET = ITEMS.register("reso_helmet",
+            () -> new ResonanceArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<Item> RESO_CHESTPLATE = ITEMS.register("reso_chestplate",
+            () -> new ResonanceArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<Item> RESO_LEGGINGS = ITEMS.register("reso_leggings",
+            () -> new ResonanceArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<Item> RESO_BOOTS = ITEMS.register("reso_boots",
+            () -> new ResonanceArmorItem(ArmorItem.Type.BOOTS));
+    public static final DeferredItem<Item> IMAG_HELMET = ITEMS.register("imag_helmet",
+            () -> new ImagEnergyArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<Item> IMAG_CHESTPLATE = ITEMS.register("imag_chestplate",
+            () -> new ImagEnergyArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<Item> IMAG_LEGGINGS = ITEMS.register("imag_leggings",
+            () -> new ImagEnergyArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<Item> IMAG_BOOTS = ITEMS.register("imag_boots",
+            () -> new ImagEnergyArmorItem(ArmorItem.Type.BOOTS));
+    public static final DeferredItem<Item> PAPER_HELMET = ITEMS.register("paper_helmet",
+            () -> new PaperArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<Item> PAPER_CHESTPLATE = ITEMS.register("paper_chestplate",
+            () -> new PaperArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<Item> PAPER_LEGGINGS = ITEMS.register("paper_leggings",
+            () -> new PaperArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<Item> PAPER_BOOTS = ITEMS.register("paper_boots",
+            () -> new PaperArmorItem(ArmorItem.Type.BOOTS));
 
     public static final DeferredItem<Item> INFO_COMPONENT = ITEMS.register("info_component", InfoComponent::new);
     public static final DeferredItem<Item> MAG_HOOK = ITEMS.register("mag_hook", MagHook::new);
@@ -147,17 +207,16 @@ public class AcademyItems {
                         !((item.get() instanceof Logo)
                                 || (item.get() instanceof AppSettings))
                 ).forEach(item -> {
-                    if (item.get() == ENERGY_UNIT.get()) {
-                        ItemStack empty_energy_unit = ENERGY_UNIT.get().getDefaultInstance();
-                        empty_energy_unit.setDamageValue(EnergyUnit.MAX_ENERGY);
-                        output.accept(empty_energy_unit);
+                    if (item.get() instanceof com.mohistmc.academy.capability.IEnergyItem energyItem) {
+                        ItemStack empty = item.get().getDefaultInstance();
+                        energyItem.setEnergy(empty, 0);
+                        output.accept(empty);
+                        ItemStack full = item.get().getDefaultInstance();
+                        energyItem.setEnergy(full, energyItem.getMaxEnergyStored(full));
+                        output.accept(full);
+                    } else {
+                        output.accept(item.get());
                     }
-                    if (item.get() == DEVELOPER_PORTABLE.get()) {
-                        ItemStack empty_developer_portable = DEVELOPER_PORTABLE.get().getDefaultInstance();
-                        empty_developer_portable.setDamageValue(DeveloperPortable.MAX_ENERGY);
-                        output.accept(empty_developer_portable);
-                    }
-                    output.accept(item.get());
                 });
                 // Every obtainable AcademyCraft block already has an explicit BlockItem in
                 // ITEMS above. Adding the block registry as well produces the same ItemStack

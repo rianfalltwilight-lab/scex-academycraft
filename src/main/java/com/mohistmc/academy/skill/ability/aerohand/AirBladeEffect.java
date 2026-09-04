@@ -9,55 +9,68 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import java.util.Comparator;
 
 import static com.mohistmc.academy.utils.MathUtils.lerpf;
 
 /**
  * 空气刃 —— 向前方发射空气刀刃
  */
-public class AirBladeEffect implements SkillEffect {
+public class AirBladeEffect implements com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect {
 
     @Override
     public String getId() {
         return "air_blade";
     }
 
+    @Override public float rawCp(float proficiency) { return lerpf(100, 150, proficiency); }
+    @Override public float rawOverload(float proficiency) { return lerpf(60, 40, proficiency); }
+
     @Override
     public void execute(ServerPlayer player, PlayerAbilityData data) {
         float exp = data.getProficiency(getId());
-        float damage = lerpf(10.0f, 18.0f, exp);
-        double range = lerpf(12.0f, 20.0f, exp);
-        float bladeWidth = lerpf(1.0f, 2.0f, exp);
-
+        float damage = lerpf(12.0f, 18.0f, exp);
+        double range = lerpf(32.0f, 48.0f, exp);
         ServerLevel level = player.serverLevel();
         Vec3 eyePos = player.getEyePosition();
-        Vec3 lookVec = player.getLookAngle();
-
-        for (double d = 1.0; d <= range; d += 0.5) {
-            Vec3 checkPos = eyePos.add(lookVec.scale(d));
-            EffectHelper.glowBurst(level, checkPos.x, checkPos.y, checkPos.z, 1, 0.15f, 0xAAFFFFFF, 10, bladeWidth / 2);
-
-            AABB area = new AABB(
-                    checkPos.x - bladeWidth, checkPos.y - bladeWidth, checkPos.z - bladeWidth,
-                    checkPos.x + bladeWidth, checkPos.y + bladeWidth, checkPos.z + bladeWidth
-            );
-            for (Entity e : level.getEntities(player, area, Entity::isAlive)) {
-                if (e instanceof LivingEntity living && e != player) {
-                    com.mohistmc.academy.skill.AcademyDamageHelper.hurt(player,living,player.damageSources().playerAttack(player), damage);
-                }
-            }
+        Vec3 lookVec = player.getLookAngle().normalize();
+        Vec3 intended = eyePos.add(lookVec.scale(range));
+        var blockHit = level.clip(new ClipContext(eyePos, intended, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
+        Vec3 end = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
+        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, new AABB(eyePos, end).inflate(1.25),
+                        living -> living != player && living.isAlive() && !player.isAlliedTo(living)
+                                && com.mohistmc.academy.skill.AcademyDamageHelper.allowsTarget(living)
+                                && living.getBoundingBox().inflate(1.0).clip(eyePos, end).isPresent())
+                .stream().min(Comparator.comparingDouble(living -> living.distanceToSqr(player))).orElse(null);
+        Vec3 impact = target == null ? end : target.getBoundingBox().getCenter();
+        double travelled = eyePos.distanceTo(impact);
+        for (double d = 0.5; d <= travelled; d += 0.5) {
+            Vec3 point = eyePos.add(lookVec.scale(d));
+            EffectHelper.glowBurst(level, point.x, point.y, point.z, 1, 0.15f,
+                    0xAAFFFFFF, 10, 0.8);
+        }
+        if (target != null) {
+            float retained = lerpf(1.0F, 0.75F, (float) Math.clamp(travelled / range, 0, 1));
+            com.mohistmc.academy.skill.AcademyDamageHelper.hurt(player, target,
+                    player.damageSources().magic(), DynamicSkillRules.damage(getId(), damage * retained));
         }
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0f, 1.5f);
 
         if (!data.isDevMode()) {
-            DynamicSkillRules.addExp(player,data,getId(),0.005f);
+            DynamicSkillRules.addExp(player,data,getId(),lerpf(0.002f, 0.004f, exp));
         }
+    }
+
+    @Override public int getCooldownTicks(float proficiency) {
+        return Math.round(lerpf(40, 30, Math.clamp(proficiency, 0.0f, 1.0f)));
     }
 }
 

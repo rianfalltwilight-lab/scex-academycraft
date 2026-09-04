@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["C C","CPC","RER"],"key":{"C":{"item":"academy:constraint_plate"},"P":{"item":"academy:reinforced_iron_plate"},"R":{"item":"academy:reso_crystal"},"E":{"item":"academy:energy_convert_component"}},"result":{"id":"academy:drop_item_magnet","count":1}}

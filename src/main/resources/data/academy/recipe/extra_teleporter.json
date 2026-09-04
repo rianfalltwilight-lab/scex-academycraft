@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" D ","PEP","ORO"],"key":{"D":{"item":"academy:data_chip"},"P":{"item":"academy:reinforced_iron_plate"},"E":{"item":"academy:energy_convert_component"},"O":{"item":"minecraft:ender_eye"},"R":{"item":"academy:resonance_component"}},"result":{"id":"academy:teleporter","count":1}}

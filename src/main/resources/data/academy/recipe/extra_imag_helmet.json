@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["RHR","RCR","EOE"],"key":{"R":{"item":"academy:reso_crystal"},"H":{"item":"academy:reso_helmet"},"C":{"item":"academy:calc_chip"},"E":{"item":"academy:energy_unit_group"},"O":{"item":"academy:optical_chip"}},"result":{"id":"academy:imag_helmet","count":1}}

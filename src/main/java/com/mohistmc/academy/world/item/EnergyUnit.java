@@ -3,6 +3,7 @@ package com.mohistmc.academy.world.item;
 import com.mohistmc.academy.capability.IEnergyItem;
 import java.util.List;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -12,7 +13,8 @@ public class EnergyUnit extends AcademyItem implements IEnergyItem {
     public static final int MAX_ENERGY = 10000;
 
     public EnergyUnit() {
-        super(new Properties().durability(MAX_ENERGY));
+        super(new Properties().durability(MAX_ENERGY)
+                .component(DataComponents.DAMAGE, MAX_ENERGY));
     }
 
     @Override

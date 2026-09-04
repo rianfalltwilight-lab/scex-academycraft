@@ -13,6 +13,16 @@ Legacy source and behavior reference:
   commit 7b1401cd420bd6888a2b9d8db5cd8a69fe314bb9
   describe 1.1.3-2-g7b1401cd; Forge 1.12.2-14.23.4.2705
 
+Optional add-on behavior reference used for the 0.0.17 compatibility work:
+  NullaDev/ExtraAcC-1.12.2- master
+  commit d66a190e3ae00d9ca8c154b47fca0509d4c171f7
+  commit date 2022-04-23T19:12:11+08:00
+
+That repository contained no LICENSE file at the fixed snapshot. Its registered
+items, recipes and ability behavior were used as an interoperability reference;
+its Java source and ExtraAcC-owned art were not imported verbatim. The 1.21.1
+implementation uses newly written code plus AcademyCraft or Minecraft resources.
+
 Legacy presentation assets were obtained from the official AcademyCraft 1.0.7
 CurseForge artifact, file 2582707, uploaded by weathfold on 2018-07-14.  This
 asset provenance is narrower than the final-1.12.2 source/behavior baseline:

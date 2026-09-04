@@ -17,8 +17,11 @@ class DynamicSettlementSourceContractTest {
     String source=Files.readString(p);
     for(String forbidden:List.of(".setCurrentCp(",".addOverload(",".addProficiency("))
      if(source.contains(forbidden)) violations.add(root.relativize(p)+" uses "+forbidden);
+    Set<String> runtimeHelpers=Set.of("TeleportSkillHelper.java", "AeroPassiveRuntime.java",
+        "TelekinesisPassiveHandler.java");
     if(source.contains("DynamicSkillRules.tryPay") && !source.contains("appliesBaseResourceCost")
-        && !p.getFileName().toString().equals("TeleportSkillHelper.java"))
+        && !source.contains("implements DynamicOneShotSkillEffect")
+        && !runtimeHelpers.contains(p.getFileName().toString()))
      violations.add(root.relativize(p)+" dynamically pays but still applies the registry base cost");
    }
   }

@@ -9,7 +9,7 @@ public final class AeroBehaviorMath {
     private AeroBehaviorMath() {}
 
     public static float coolingReduction(float proficiency) {
-        return lerp(80.0f, 180.0f, proficiency);
+        return lerp(200.0f, 800.0f, proficiency);
     }
 
     public static float cooledOverload(float currentOverload, float proficiency) {
@@ -18,15 +18,15 @@ public final class AeroBehaviorMath {
     }
 
     public static double airJetSpeed(float proficiency) {
-        return lerp(1.35f, 2.25f, proficiency);
+        return lerp(2.0f, 4.0f, proficiency);
     }
 
-    /** Volcanic Ball retains 35% of its damage at maximum range. */
+    /** ExtraAcC's projectile retains half of its initial damage at its 80-tick lifetime. */
     public static float volcanicDamage(float pointBlankDamage, double distance, double range) {
         if (!Float.isFinite(pointBlankDamage) || pointBlankDamage <= 0
                 || !Double.isFinite(distance) || !Double.isFinite(range) || range <= 0) return 0;
         float travelled = clamp01((float) (Math.max(0, distance) / range));
-        return pointBlankDamage * lerp(1.0f, 0.35f, travelled);
+        return pointBlankDamage * lerp(1.0f, 0.5f, travelled);
     }
 
     public static int separatorChargeTicks(float proficiency) {
@@ -34,11 +34,11 @@ public final class AeroBehaviorMath {
     }
 
     public static float separatorRadius(float proficiency) {
-        return lerp(3.0f, 5.0f, proficiency);
+        return 3.0f;
     }
 
     public static float separatorDamage(float proficiency) {
-        return lerp(12.0f, 24.0f, proficiency);
+        return lerp(40.0f, 60.0f, proficiency);
     }
 
     /** Maximum raw fall damage before vanilla enchantment/effect reductions. */
@@ -54,7 +54,7 @@ public final class AeroBehaviorMath {
     }
 
     public static float offenseArmourDamageMultiplier(float proficiency) {
-        return lerp(0.80f, 0.55f, proficiency);
+        return lerp(0.10f, 0.05f, proficiency);
     }
 
     /** Number of ticks between vanilla air consumption steps below mastery. */
@@ -63,11 +63,16 @@ public final class AeroBehaviorMath {
     }
 
     public static int cruiseBombOrbCount(float proficiency) {
-        return Math.clamp(3 + (int) Math.floor(clamp01(proficiency) * 3.999f), 3, 6);
+        float p = clamp01(proficiency);
+        if (p >= 1.0f) return 8;
+        if (p >= 0.75f) return 7;
+        if (p >= 0.5f) return 6;
+        if (p >= 0.25f) return 5;
+        return 4;
     }
 
     public static int cruiseBombDurationTicks(float proficiency) {
-        return Math.round(lerp(200.0f, 400.0f, proficiency));
+        return 72_000;
     }
 
     public static float cruiseBombDamage(float proficiency) {

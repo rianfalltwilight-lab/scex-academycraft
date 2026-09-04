@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["GGG","GRG","EIE"],"key":{"G":{"item":"minecraft:gold_block"},"R":{"item":"academy:resonance_component"},"E":{"item":"academy:energy_unit_group"},"I":{"item":"academy:info_component"}},"result":{"id":"academy:avalon","count":1}}

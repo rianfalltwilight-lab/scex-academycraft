@@ -45,7 +45,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  */
 @EventBusSubscriber(modid = AcademyCraft.MODID)
 public final class CruiseBombEffect implements SkillEffect {
-    private static final double ACQUIRE_RANGE = 12.0;
+    private static final double ACQUIRE_RANGE = 4.0;
     private static final int ACQUIRE_INTERVAL = 5;
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
@@ -53,16 +53,18 @@ public final class CruiseBombEffect implements SkillEffect {
         private final ResourceKey<Level> dimension;
         private final long expiresAt;
         private final float proficiency;
-        private final int initialOrbs;
+        private final int maximumOrbs;
         private int remainingOrbs;
+        private long nextSummon;
 
         private Session(ResourceKey<Level> dimension, long expiresAt,
-                        float proficiency, int orbs) {
+                        float proficiency, int orbs, long now) {
             this.dimension = dimension;
             this.expiresAt = expiresAt;
             this.proficiency = proficiency;
-            this.initialOrbs = orbs;
-            this.remainingOrbs = orbs;
+            this.maximumOrbs = orbs;
+            this.remainingOrbs = 0;
+            this.nextSummon = now;
         }
     }
 
@@ -73,19 +75,34 @@ public final class CruiseBombEffect implements SkillEffect {
 
     @Override
     public boolean canActivate(ServerPlayer player, PlayerAbilityData data) {
-        if (SESSIONS.containsKey(player.getUUID())) return false;
-        boolean hasWater = findWaterBucket(player) >= 0;
+        if (SESSIONS.containsKey(player.getUUID())) return true;
+        boolean hasWater = player.getAbilities().instabuild || findWaterBucket(player) >= 0;
         if (!hasWater) {
             player.displayClientMessage(Component.translatable(
                     "item.academy.factor_telekinesis.cruise_bomb.desc"), true);
         }
-        return hasWater;
+        return hasWater && DynamicSkillRules.canPay(data, getId(), 200F, 20F);
+    }
+
+    @Override public boolean appliesBaseResourceCost() { return false; }
+    @Override public boolean grantsActivationProficiency() { return false; }
+    @Override public boolean managesOwnCooldown() { return true; }
+
+    @Override
+    public boolean executeAndReport(ServerPlayer player, PlayerAbilityData data) {
+        if (SESSIONS.containsKey(player.getUUID())) {
+            terminate(player, data, true);
+            return true;
+        }
+        if (!canActivate(player, data) || !DynamicSkillRules.tryPay(data, getId(), 200F, 20F)) return false;
+        execute(player, data);
+        return true;
     }
 
     @Override
     public void execute(ServerPlayer player, PlayerAbilityData data) {
         int waterSlot = findWaterBucket(player);
-        if (waterSlot < 0) return;
+        if (waterSlot < 0 && !player.getAbilities().instabuild) return;
         if (!player.getAbilities().instabuild) {
             player.getInventory().setItem(waterSlot, new ItemStack(Items.BUCKET));
         }
@@ -95,7 +112,7 @@ public final class CruiseBombEffect implements SkillEffect {
         long expiresAt = player.serverLevel().getGameTime()
                 + AeroBehaviorMath.cruiseBombDurationTicks(proficiency);
         SESSIONS.put(player.getUUID(), new Session(player.level().dimension(),
-                expiresAt, proficiency, orbs));
+                expiresAt, proficiency, orbs, player.serverLevel().getGameTime()));
 
         player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BUCKET_EMPTY, SoundSource.PLAYERS, 0.8f, 1.25f);
@@ -118,18 +135,34 @@ public final class CruiseBombEffect implements SkillEffect {
         if (session == null) return;
         PlayerAbilityData data = player.getData(AcademyAttachments.PLAYER_ABILITY);
         long now = player.serverLevel().getGameTime();
-        if (!valid(player, data, session, now) || session.remainingOrbs <= 0) {
-            SESSIONS.remove(player.getUUID());
+        if (!valid(player, data, session, now)
+                || !DynamicSkillRules.tryPay(data, "cruise_bomb",
+                2F - session.proficiency, 0.05F)) {
+            terminate(player, data, true);
             return;
+        }
+        DynamicSkillRules.addExp(player, data, "cruise_bomb", 0.00002F);
+
+        if (session.remainingOrbs < session.maximumOrbs && now >= session.nextSummon) {
+            if (!DynamicSkillRules.tryPay(data, "cruise_bomb", 50F, 0)) {
+                terminate(player, data, true);
+                return;
+            }
+            session.remainingOrbs++;
+            session.nextSummon = now + 10;
+            DynamicSkillRules.addExp(player, data, "cruise_bomb", 0.0001F);
         }
 
         renderOrbit(player, session, now);
-        if (Math.floorMod(now, ACQUIRE_INTERVAL) != 0) return;
+        if (session.remainingOrbs <= 0 || Math.floorMod(now, ACQUIRE_INTERVAL) != 0) return;
         Optional<Entity> target = findTarget(player);
         if (target.isEmpty()) return;
+        if (!DynamicSkillRules.tryPay(data, "cruise_bomb", 50F, 0)) {
+            terminate(player, data, true);
+            return;
+        }
         if (strike(player, data, session, target.get())) {
             session.remainingOrbs--;
-            if (session.remainingOrbs <= 0) SESSIONS.remove(player.getUUID());
         }
     }
 
@@ -147,7 +180,7 @@ public final class CruiseBombEffect implements SkillEffect {
         ServerLevel level = player.serverLevel();
         double phase = now * 0.16;
         for (int orb = 0; orb < session.remainingOrbs; orb++) {
-            double angle = phase + Math.PI * 2.0 * orb / session.initialOrbs;
+            double angle = phase + Math.PI * 2.0 * orb / session.maximumOrbs;
             double radius = 1.0 + 0.12 * Math.sin(phase * 0.7 + orb);
             double x = player.getX() + Math.cos(angle) * radius;
             double y = player.getY() + 1.0 + 0.25 * Math.sin(angle * 1.7);
@@ -209,13 +242,19 @@ public final class CruiseBombEffect implements SkillEffect {
                 SoundEvents.GENERIC_SPLASH, SoundSource.PLAYERS, 0.7f, 1.25f);
         level.sendParticles(ParticleTypes.SPLASH, end.x, end.y, end.z,
                 14, 0.35, 0.35, 0.35, 0.08);
-        AbilityMutationService.addSkillExp(player, data, "cruise_bomb", 0.001f);
+        DynamicSkillRules.addExp(player, data, "cruise_bomb", 0.0002F);
         return true;
     }
 
     @Override
     public int getCooldownTicks(float proficiency) {
-        return Math.round(120 - 40 * Math.clamp(proficiency, 0.0f, 1.0f));
+        return 40;
+    }
+
+    private static void terminate(ServerPlayer player, PlayerAbilityData data, boolean cooldown) {
+        if (SESSIONS.remove(player.getUUID()) != null && cooldown && !data.isDevMode()) {
+            data.setCooldown("cruise_bomb", 40);
+        }
     }
 
     private static void clear(Entity entity) { SESSIONS.remove(entity.getUUID()); }

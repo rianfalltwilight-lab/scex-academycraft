@@ -12,6 +12,7 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import java.util.Arrays;
 
 public final class ImagFusorJeiCategory implements IRecipeCategory<RecipeHolder<ImagFusorRecipe>> {
     private final IDrawable icon;
@@ -23,7 +24,12 @@ public final class ImagFusorJeiCategory implements IRecipeCategory<RecipeHolder<
     @Override public int getHeight() { return 48; }
     @Override public void setRecipe(IRecipeLayoutBuilder b, RecipeHolder<ImagFusorRecipe> holder, IFocusGroup focuses) {
         var recipe = holder.value();
-        b.addInputSlot(8, 16).setStandardSlotBackground().addIngredients(recipe.input());
+        b.addInputSlot(8, 16).setStandardSlotBackground().addItemStacks(
+                Arrays.stream(recipe.input().getItems()).map(stack -> {
+                    ItemStack copy = stack.copy();
+                    copy.setCount(recipe.inputCount());
+                    return copy;
+                }).toList());
         // Phase liquid units are consumed into the internal tank and returned
         // as empty units; they are recipe inputs, not reusable catalysts.
         // Keeping this as INPUT also lets JEI's transfer handler fill the

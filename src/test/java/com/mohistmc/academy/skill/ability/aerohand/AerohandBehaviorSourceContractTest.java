@@ -23,7 +23,7 @@ class AerohandBehaviorSourceContractTest {
         int skill = registry.indexOf("new Skill.Builder(\"air_cooling\"");
         assertTrue(skill >= 0);
         assertTrue(registry.substring(skill, Math.min(skill + 420, registry.length()))
-                .contains(".cpCost(20).overload(0)"));
+                .contains(".cpCost(400).overload(0)"));
     }
 
     @Test
@@ -40,13 +40,13 @@ class AerohandBehaviorSourceContractTest {
     }
 
     @Test
-    void separatorChargesAndExplicitlyIncludesSelfSuffocation() throws Exception {
+    void separatorIsAnImmediateOneShotAndExplicitlyIncludesSelfSuffocation() throws Exception {
         String separator = source("skill/ability/aerohand/AeroSeparatorEffect.java");
         String boundary = source("skill/AcademyDamageHelper.java");
-        assertTrue(separator.contains("implements ChargingSkillEffect"));
+        assertTrue(separator.contains("implements DynamicOneShotSkillEffect"));
         assertTrue(separator.contains("player.position().add"));
         assertTrue(separator.contains("living == player"));
-        assertTrue(separator.contains("damageSources().inWall()"));
+        assertTrue(separator.contains("damageSources().drown()"));
         assertTrue(separator.contains("living.setAirSupply"));
         assertTrue(separator.contains("AcademyDamageHelper.hurtSelf"));
         assertTrue(boundary.contains("target == attacker"));
@@ -66,12 +66,14 @@ class AerohandBehaviorSourceContractTest {
     }
 
     @Test
-    void allFourPassivesHaveDedicatedServerEventBoundaries() throws Exception {
+    void allFourPassivesHaveServerAuthoritativeDamageAndTickBoundaries() throws Exception {
         String runtime = source("skill/ability/aerohand/AeroPassiveRuntime.java");
-        assertTrue(runtime.contains("LivingFallEvent"));
-        assertTrue(runtime.contains("LivingBreatheEvent"));
-        assertTrue(runtime.contains("LivingDrownEvent"));
         assertTrue(runtime.contains("LivingIncomingDamageEvent"));
+        assertTrue(runtime.contains("DamageTypes.FALL"));
+        assertTrue(runtime.contains("DamageTypes.IN_WALL"));
+        assertTrue(runtime.contains("DamageTypes.DROWN"));
+        assertTrue(runtime.contains("PlayerTickEvent.Post"));
+        assertTrue(runtime.contains("setAirSupply"));
         assertTrue(runtime.contains("GRANTED_FLIGHT"));
         assertTrue(runtime.contains("projectile.discard()"));
         assertTrue(runtime.contains("ServerStoppedEvent"));

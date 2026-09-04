@@ -27,11 +27,17 @@ import com.mohistmc.academy.world.AcademyBlockEntities;
 import com.mohistmc.academy.world.AcademyEntities;
 import com.mohistmc.academy.world.AcademyMenus;
 import com.mohistmc.academy.world.AcademyParticles;
+import com.mohistmc.academy.world.AcademyItems;
+import com.mohistmc.academy.world.item.EnergyUnitGroup;
+import com.mohistmc.academy.world.item.ExtraItemData;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
@@ -43,6 +49,24 @@ import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 @EventBusSubscriber(modid = AcademyCraft.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class ClientModListener {
     private ClientModListener() {}
+
+    @SubscribeEvent
+    public static void clientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            ItemProperties.register(AcademyItems.RAY_TWISTER.get(),
+                    ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "active"),
+                    (stack, level, entity, seed) -> ExtraItemData.isActive(stack) ? 1.0F : 0.0F);
+            ItemProperties.register(AcademyItems.TELEPORTER_DEVICE.get(),
+                    ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "bound"),
+                    (stack, level, entity, seed) -> ExtraItemData.teleport(stack) == null ? 0.0F : 1.0F);
+            ItemProperties.register(AcademyItems.ENERGY_UNIT_GROUP.get(),
+                    ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "charge"),
+                    (stack, level, entity, seed) -> stack.getItem() instanceof EnergyUnitGroup unit
+                            ? Math.max(0, Math.min(5,
+                                    (unit.getEnergyStored(stack) + 5_000) / 10_000))
+                            : 0.0F);
+        });
+    }
 
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -113,6 +137,8 @@ public final class ClientModListener {
         event.registerEntityRenderer(AcademyEntities.COIN_ENTITY.get(), CoinRenderer::new);
         event.registerEntityRenderer(AcademyEntities.SILBARN.get(), SilbarnRenderer::new);
         event.registerEntityRenderer(AcademyEntities.MAG_HOOK.get(),
+                context -> new ThrownItemRenderer<>(context, 1.0F, true));
+        event.registerEntityRenderer(AcademyEntities.PAPER_PLANE.get(),
                 context -> new ThrownItemRenderer<>(context, 1.0F, true));
         event.registerEntityRenderer(AcademyEntities.ORE_HIGHLIGHT.get(), OreHighlightRenderer::new);
         event.registerEntityRenderer(AcademyEntities.MAG_MANIP_BLOCK.get(), MagManipBlockRenderer::new);

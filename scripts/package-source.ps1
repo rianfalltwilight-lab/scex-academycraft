@@ -27,7 +27,7 @@ New-Item -ItemType Directory -Path $staging -Force | Out-Null
 $allowedTopLevelFiles = @(
     '.gitattributes', '.gitignore', 'build.gradle', 'gradle.properties',
     'gradlew', 'gradlew.bat', 'settings.gradle', 'LICENSE', 'NOTICE', 'README.md',
-    'BUILD-INFO.txt'
+    'AI-GENERATED.md', 'BUILD-INFO.txt'
 )
 $sourceFiles = @()
 foreach ($name in $allowedTopLevelFiles) {

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -24,7 +25,8 @@ public class DeveloperPortable extends AcademyItem implements IEnergyItem {
     public static final int MAX_ENERGY = 10000;
 
     public DeveloperPortable() {
-        super(new Properties().durability(MAX_ENERGY));
+        super(new Properties().durability(MAX_ENERGY)
+                .component(DataComponents.DAMAGE, MAX_ENERGY));
     }
 
     @Override

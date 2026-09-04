@@ -6,13 +6,14 @@
 
 - 老版行为基准：[`LambdaInnovation/AcademyCraft`](https://github.com/LambdaInnovation/AcademyCraft)，Minecraft 1.12.2 最终源码快照；
 - 1.21.1 起点：[`MohistMC/AcademyCraft`](https://github.com/MohistMC/AcademyCraft)；
+- 附加内容行为参考：[`NullaDev/ExtraAcC-1.12.2-`](https://github.com/NullaDev/ExtraAcC-1.12.2-)，固定于 `master@d66a190e3ae00d9ca8c154b47fca0509d4c171f7`；
 - 本仓库不是 LambdaInnovation、MohistMC、NeoForge 或《某科学的超电磁炮》的官方发行版。
 
 ## 当前状态
 
-当前公开测试版为 **0.0.16**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁。
+当前公开测试版为 **0.0.17**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁；本版还补入 ExtraAcC 1.12.2 登记的 25 个物品、23 个专属技能及其机器配方和动态物品状态。
 
-这不代表已经完成 100% 行为或视觉等价。最近一次完整独立复审对 0.0.14 的证据加权估计约为 **62%（主观区间 50%–72%）**；0.0.15 增加了旧机器所有权迁移和正式客户端门禁，仍需逐技能、双客户端、JEI 实际转移、多缩放 GUI 和长期存档测试。测试数、文件数、类名或注册数量不会被当作功能完成率。
+这不代表已经完成 100% 行为或视觉等价。ExtraAcC 的登记项已经逐项盘点，但若干旧版移动实体与专属美术在 1.21.1 中采用服务端权威效果或合法的 Academy/原版资源替代；仍需双客户端压力、JEI 实际转移、多缩放 GUI 和长期存档测试。测试数、文件数、类名或注册数量不会被当作功能完成率。
 
 请先备份世界，并在非生产实例验证后再用于服务器。
 
@@ -23,7 +24,7 @@
 | Minecraft | 1.21.1 |
 | NeoForge | 21.1.248 |
 | Java | 21 |
-| AcademyCraft | 0.0.16 |
+| AcademyCraft | 0.0.17 |
 | JEI / Jade | 可选，不是硬前置 |
 
 从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。

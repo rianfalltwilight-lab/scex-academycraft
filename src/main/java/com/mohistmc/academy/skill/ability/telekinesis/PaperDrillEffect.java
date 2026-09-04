@@ -23,8 +23,12 @@ import net.minecraft.world.phys.Vec3;
 
 /** Held paper drill: consumes one stack once, then follows the server-authoritative look ray. */
 public final class PaperDrillEffect implements ChargingSkillEffect {
-    private static final float CP_COST = 60.0f;
-    private static final float OVERLOAD_COST = 50.0f;
+    private static float startCp(float proficiency) {
+        return 20F * (200F - 100F * Math.clamp(proficiency, 0, 1));
+    }
+    private static float startOverload(float proficiency) {
+        return 20F * (6F - 2F * Math.clamp(proficiency, 0, 1));
+    }
     /**
      * The key-down packet creates this unpaid intent.  Payment is deliberately delayed until
      * the first acknowledged charging tick; otherwise a lost start acknowledgement can consume
@@ -46,10 +50,11 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
 
     @Override
     public boolean canStartCharging(ServerPlayer player, PlayerAbilityData data) {
+        float proficiency = data.getProficiency(getId());
         return DynamicSkillRules.enabled(getId())
                 && data.getCurrentAbility() == AbilityCategory.TELEKINESIS
                 && data.hasLearnedSkill("perfect_paper")
-                && DynamicSkillRules.canPay(data, getId(), CP_COST, OVERLOAD_COST)
+                && DynamicSkillRules.canPay(data, getId(), startCp(proficiency), startOverload(proficiency))
                 && (player.getAbilities().instabuild
                 || countPaper(player) >= TelekinesisRules.PAPER_DRILL_REQUIRED_PAPER);
     }
@@ -68,20 +73,28 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
         if (state == null) return false;
         if (!state.paid) {
             if (!canStartCharging(player, data)
-                    || !DynamicSkillRules.tryPay(data, getId(), CP_COST, OVERLOAD_COST)) {
+                    || !DynamicSkillRules.tryPay(data, getId(), startCp(state.proficiency),
+                    startOverload(state.proficiency))) {
                 ACTIVE.remove(player.getUUID());
                 return false;
             }
             if (!consumePaper(player, TelekinesisRules.PAPER_DRILL_REQUIRED_PAPER)) {
-                data.refundDynamic(DynamicSkillRules.cp(getId(), CP_COST),
-                        DynamicSkillRules.overload(getId(), OVERLOAD_COST));
+                data.refundDynamic(DynamicSkillRules.cp(getId(), startCp(state.proficiency)),
+                        DynamicSkillRules.overload(getId(), startOverload(state.proficiency)));
                 ACTIVE.remove(player.getUUID());
                 return false;
             }
             state.paid = true;
+            DynamicSkillRules.addExp(player, data, getId(), 0.002F);
             player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0f, 0.65f);
         }
+        if (!DynamicSkillRules.tryPay(data, getId(), 1F, 0)) {
+            ACTIVE.remove(player.getUUID());
+            givePaper(player);
+            return false;
+        }
+        DynamicSkillRules.addExp(player, data, getId(), 0.0001F);
         float proficiency = state.proficiency;
         Vec3 from = player.getEyePosition();
         Vec3 intended = from.add(player.getLookAngle().normalize()
@@ -101,11 +114,19 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
                     target -> target != player && target.isAlive() && !player.isAlliedTo(target)
                             && target.getBoundingBox().inflate(0.65).clip(from, to).isPresent())) {
                 if (!AcademyDamageHelper.allowsTarget(target)) continue;
+                if (!DynamicSkillRules.tryPay(data, getId(), 100F * target.getBbHeight(), 0)) {
+                    ACTIVE.remove(player.getUUID());
+                    givePaper(player);
+                    return false;
+                }
                 // The drill's five-tick pulse is intentional; vanilla's ten-tick hurt window
                 // would otherwise silently discard every other continuous-damage pulse.
                 target.invulnerableTime = 0;
                 if (AcademyDamageHelper.hurt(player, target,
-                        player.damageSources().playerAttack(player), damage)) hits++;
+                        player.damageSources().playerAttack(player), damage)) {
+                    hits++;
+                    DynamicSkillRules.addExp(player, data, getId(), 0.002F);
+                }
             }
             if (hits > 0 && !data.isDevMode()) {
                 DynamicSkillRules.addExp(player, data, getId(), 0.0005f * hits);
@@ -121,6 +142,7 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
 
     @Override public boolean tryRelease(ServerPlayer player, PlayerAbilityData data, int ticks) {
         State state = ACTIVE.remove(player.getUUID());
+        if (state != null && state.paid) givePaper(player);
         return state != null && state.paid;
     }
 
@@ -129,16 +151,17 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
     }
 
     @Override public void onChargingAbort(ServerPlayer player, PlayerAbilityData data) {
-        ACTIVE.remove(player.getUUID());
+        State state = ACTIVE.remove(player.getUUID());
+        if (state != null && state.paid) givePaper(player);
     }
 
     @Override public int getMinChargeTicks() { return 1; }
-    @Override public int getMaxChargeTicks() { return 200; }
+    @Override public int getMaxChargeTicks() { return 72_000; }
     @Override public int getCooldownTicks(float proficiency) {
-        return (int) (140 - 60 * Math.max(0, Math.min(1, proficiency)));
+        return 100;
     }
     @Override public int getCooldownTicks(float proficiency, int chargedTicks) {
-        return Math.max(40, getCooldownTicks(proficiency) - Math.min(40, chargedTicks / 5));
+        return 100;
     }
     @Override public void execute(ServerPlayer player, PlayerAbilityData data) {}
 
@@ -166,6 +189,12 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
         }
         inventory.setChanged();
         return remaining == 0;
+    }
+
+    private static void givePaper(ServerPlayer player) {
+        ItemStack paper = new ItemStack(Items.PAPER, TelekinesisRules.PAPER_DRILL_REQUIRED_PAPER);
+        if (!player.getInventory().add(paper)) player.drop(paper, false);
+        player.getInventory().setChanged();
     }
 
     private static void renderDrill(ServerLevel level, Vec3 from, Vec3 to) {

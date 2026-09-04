@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" D ","EPE","EEE"],"key":{"D":{"item":"academy:data_chip"},"E":{"item":"academy:energy_unit"},"P":{"item":"academy:reinforced_iron_plate"}},"result":{"id":"academy:energy_unit_group","count":1}}

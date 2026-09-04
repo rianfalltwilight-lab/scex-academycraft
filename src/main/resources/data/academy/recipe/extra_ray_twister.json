@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" R "," O ","PEP"],"key":{"R":{"item":"academy:resonance_component"},"O":{"item":"academy:optical_chip"},"P":{"item":"academy:reinforced_iron_plate"},"E":{"item":"academy:energy_convert_component"}},"result":{"id":"academy:ray_twister","count":1}}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "academy:item/resonance_component"},
+  "overrides": [
+    {"predicate": {"academy:active": 1.0}, "model": "academy:item/ray_twister_active"}
+  ]
+}

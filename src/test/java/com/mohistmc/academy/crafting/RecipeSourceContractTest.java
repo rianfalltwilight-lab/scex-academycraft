@@ -19,13 +19,13 @@ class RecipeSourceContractTest {
         try (var files = Files.list(ROOT)) {
             json = files.filter(p -> p.toString().endsWith(".json")).toList();
         }
-        assertEquals(83, json.size(), "54 official/RF crafting/smelting + 27 Metal Former + 2 Imag Fusor recipes are required");
+        assertEquals(112, json.size(), "83 AcademyCraft recipes plus 29 clean-room ExtraAcC compatibility recipes are required");
         long former = json.stream().filter(p -> read(p).contains("\"academy:metal_forming\"")).count();
         Pattern fusorType = Pattern.compile(
                 "\\\"type\\\"\\s*:\\s*\\\"academy:imag_fus(?:or|ing)\\\"");
         long fusor = json.stream().filter(p -> fusorType.matcher(read(p)).find()).count();
-        assertEquals(27, former);
-        assertEquals(2, fusor);
+        assertEquals(28, former);
+        assertEquals(7, fusor);
         for (String name : List.of("fuse_crystal_normal.json", "fuse_crystal_pure.json")) {
             String recipe = read(ROOT.resolve(name));
             assertTrue(recipe.contains("\"type\":\"academy:imag_fusor\""),
@@ -71,8 +71,17 @@ class RecipeSourceContractTest {
                 "0.0.4-0.0.10 rebuild datapacks must continue to decode");
         assertTrue(recipe.contains("optionalFieldOf(\"phaseLiquid\")"));
         assertTrue(recipe.contains("optionalFieldOf(\"phase_liquid\")"));
+        assertTrue(recipe.contains("optionalFieldOf(\"inputCount\", 1)"));
         assertTrue(recipe.contains("getSerializer() { return AcademyRecipeSerializers.IMAG_FUSOR.get(); }"));
         assertTrue(recipe.contains("getType() { return AcademyRecipeTypes.IMAG_FUSOR.get(); }"));
+        String machine = read(Path.of(
+                "src/main/java/com/mohistmc/academy/world/block/entity/ImagFusorBlockEntity.java"));
+        String jei = read(Path.of(
+                "src/main/java/com/mohistmc/academy/client/jei/ImagFusorJeiCategory.java"));
+        assertTrue(machine.contains("input.shrink(recipe.inputCount())"),
+                "machine must consume the recipe-declared amount atomically");
+        assertTrue(jei.contains("copy.setCount(recipe.inputCount())"),
+                "JEI must render the real Imag Fusor input count");
     }
 
     @Test void restoresLegacyVanillaOreRefiningRecipesExactly() {

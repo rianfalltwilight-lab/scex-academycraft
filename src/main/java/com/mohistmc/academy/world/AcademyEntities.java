@@ -16,6 +16,7 @@ import com.mohistmc.academy.world.entity.OreHighlightEntity;
 import com.mohistmc.academy.world.entity.MagManipBlockEntity;
 import com.mohistmc.academy.world.entity.EntitySilbarn;
 import com.mohistmc.academy.world.entity.EntityMagHook;
+import com.mohistmc.academy.world.entity.ExtraPaperPlaneEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -46,6 +47,13 @@ public class AcademyEntities {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("mag_hook_projectile"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ExtraPaperPlaneEntity>> PAPER_PLANE = ENTITIES.register("paper_plane",
+            () -> EntityType.Builder.of(ExtraPaperPlaneEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.25F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("paper_plane"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<OreHighlightEntity>> ORE_HIGHLIGHT = ENTITIES.register("ore_highlight",
             () -> EntityType.Builder.of(OreHighlightEntity::new, MobCategory.MISC)

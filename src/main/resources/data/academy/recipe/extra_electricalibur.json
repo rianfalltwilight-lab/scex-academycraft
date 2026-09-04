@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["RMR","PGP","ESE"],"key":{"R":{"item":"academy:reso_crystal"},"M":{"item":"academy:magnetic_coil"},"P":{"item":"academy:constraint_plate"},"G":{"item":"minecraft:golden_sword"},"E":{"item":"academy:energy_unit_group"},"S":{"item":"academy:resonance_component"}},"result":{"id":"academy:electricalibur","count":1}}

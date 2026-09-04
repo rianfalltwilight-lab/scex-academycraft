@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "academy:item/energy_unit_empty"},
+  "overrides": [
+    {"predicate": {"academy:charge": 1.0}, "model": "academy:item/energy_unit_group_1"},
+    {"predicate": {"academy:charge": 2.0}, "model": "academy:item/energy_unit_group_2"},
+    {"predicate": {"academy:charge": 3.0}, "model": "academy:item/energy_unit_group_3"},
+    {"predicate": {"academy:charge": 4.0}, "model": "academy:item/energy_unit_group_4"},
+    {"predicate": {"academy:charge": 5.0}, "model": "academy:item/energy_unit_group_5"}
+  ]
+}

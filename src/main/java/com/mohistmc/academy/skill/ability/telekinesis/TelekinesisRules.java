@@ -3,22 +3,20 @@ package com.mohistmc.academy.skill.ability.telekinesis;
 /** Pure, testable balance and boundary rules for the Telekinesis category. */
 public final class TelekinesisRules {
     public static final int PAPER_DRILL_REQUIRED_PAPER = 64;
-    public static final int PAPER_DRILL_PULSE_INTERVAL = 5;
+    public static final int PAPER_DRILL_PULSE_INTERVAL = 1;
 
     private TelekinesisRules() {}
 
     public static float overloadThinkingCost(float proficiency) {
-        return lerp(80.0f, 50.0f, proficiency);
+        return 100.0f;
     }
 
     public static float overloadThinkingRestore(float proficiency) {
-        return lerp(220.0f, 420.0f, proficiency);
+        return lerp(1000.0f, 2000.0f, proficiency);
     }
 
     public static float insulationReduction(float proficiency, boolean electromasterOrMeltdowner) {
-        return electromasterOrMeltdowner
-                ? lerp(0.30f, 0.65f, proficiency)
-                : lerp(0.10f, 0.30f, proficiency);
+        return lerp(0.10f, 0.20f, proficiency) * (electromasterOrMeltdowner ? 2.0F : 1.0F);
     }
 
     public static float mitigateAbilityDamage(float amount, float proficiency,
@@ -33,15 +31,15 @@ public final class TelekinesisRules {
     }
 
     public static float paperDrillDamage(float proficiency) {
-        return lerp(6.0f, 14.0f, proficiency);
+        return lerp(10.0f, 15.0f, proficiency);
     }
 
     public static double paperDrillRange(float proficiency) {
-        return lerp(12.0f, 22.0f, proficiency);
+        return 5.0;
     }
 
     public static double psychoTransmissionRange(float proficiency) {
-        return lerp(8.0f, 16.0f, proficiency);
+        return lerp(8.0f, 12.0f, proficiency);
     }
 
     private static float lerp(float from, float to, float proficiency) {

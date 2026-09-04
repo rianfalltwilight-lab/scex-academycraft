@@ -14,17 +14,21 @@ import net.minecraft.world.phys.Vec3;
 /**
  * 空气喷射 —— 向后喷气，使施术者向视线方向短距离飞跃。
  */
-public class AirJetEffect implements SkillEffect {
+public class AirJetEffect implements com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect {
 
     @Override
     public String getId() {
         return "air_jet";
     }
 
+    @Override public float rawCp(float proficiency) { return 200 + 200 * Math.clamp(proficiency, 0, 1); }
+    @Override public float rawOverload(float proficiency) { return 80 - 40 * Math.clamp(proficiency, 0, 1); }
+
     @Override
     public boolean canActivate(ServerPlayer player, PlayerAbilityData data) {
         return !player.isPassenger() && !player.isSleeping()
-                && !AeroPassiveRuntime.isOffenseArmourEngaged(player);
+                && !AeroPassiveRuntime.isOffenseArmourEngaged(player)
+                && com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect.super.canActivate(player, data);
     }
 
     @Override
@@ -49,13 +53,13 @@ public class AirJetEffect implements SkillEffect {
                 SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
 
         if (!data.isDevMode()) {
-            DynamicSkillRules.addExp(player,data,getId(),0.005f);
+            DynamicSkillRules.addExp(player,data,getId(),0.002f + 0.001f * exp);
         }
     }
 
     @Override
     public int getCooldownTicks(float proficiency) {
-        return Math.round(30 - 15 * Math.clamp(proficiency, 0.0f, 1.0f));
+        return Math.round(40 - 30 * Math.clamp(proficiency, 0.0f, 1.0f));
     }
 }
 

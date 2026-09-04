@@ -130,7 +130,13 @@ public class AcademyCraft {
                 AcademyBlockEntities.IMAG_FUSOR.get(), (be, side) -> be.getHandlerForSide(side));
         event.registerItem(Capabilities.EnergyStorage.ITEM,
                 (stack, context) -> new com.mohistmc.academy.capability.AcademyEnergyItemStorage(stack),
-                AcademyItems.ENERGY_UNIT.get(), AcademyItems.DEVELOPER_PORTABLE.get());
+                AcademyItems.ENERGY_UNIT.get(), AcademyItems.DEVELOPER_PORTABLE.get(),
+                AcademyItems.RAY_TWISTER.get(), AcademyItems.ENERGY_UNIT_GROUP.get(),
+                AcademyItems.ELECTRICALIBUR.get(), AcademyItems.AVALON.get(),
+                AcademyItems.LASOR_GUN.get(), AcademyItems.AIR_JET.get(),
+                AcademyItems.TELEPORTER_DEVICE.get(), AcademyItems.DROP_ITEM_MAGNET.get(),
+                AcademyItems.IMAG_HELMET.get(), AcademyItems.IMAG_CHESTPLATE.get(),
+                AcademyItems.IMAG_LEGGINGS.get(), AcademyItems.IMAG_BOOTS.get());
         // Expose IF through the standard NeoForge energy capability so Jade and
         // automation mods see the same authoritative value as our machine GUI.
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, AcademyBlockEntities.DEV_NORMAL.get(),

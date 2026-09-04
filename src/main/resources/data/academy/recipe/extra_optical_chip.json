@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" S ","SCS"," S "],"key":{"S":{"item":"academy:imag_silicon_ingot"},"C":{"item":"academy:calc_chip"}},"result":{"id":"academy:optical_chip","count":1}}

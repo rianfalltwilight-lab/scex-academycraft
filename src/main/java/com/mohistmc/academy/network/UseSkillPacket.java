@@ -91,7 +91,7 @@ public record UseSkillPacket(int slotIndex) implements CustomPacketPayload {
                 // Dynamic legacy effects settle inside their authoritative
                 // action.  Start cooldown only after that action commits.
                 executed = effect.executeAndReport(player, data);
-                if (executed && !data.isDevMode())
+                if (executed && !data.isDevMode() && !effect.managesOwnCooldown())
                     data.setCooldown(skill.getId(), effect.getCooldownTicks(
                             effect.cooldownUsesPreActivationProficiency()
                                     ? preActivationProficiency : data.getProficiency(skill.getId())));

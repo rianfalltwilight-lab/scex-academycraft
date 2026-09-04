@@ -28,6 +28,9 @@ public interface SkillEffect {
     /** Whether generic activation should award its standard proficiency increment. */
     default boolean grantsActivationProficiency() { return true; }
 
+    /** Toggle/session effects apply their cooldown when the authoritative context terminates. */
+    default boolean managesOwnCooldown() { return false; }
+
     /** 返回技能冷却 tick 数(基于熟练度),默认 40 tick(2秒),子类可覆盖。 */
     default int getCooldownTicks(float proficiency) {
         return 40;

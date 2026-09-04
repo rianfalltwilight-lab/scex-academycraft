@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {"layer0": "minecraft:item/ender_pearl"},
+  "overrides": [
+    {"predicate": {"academy:bound": 1.0}, "model": "academy:item/teleporter_bound"}
+  ]
+}

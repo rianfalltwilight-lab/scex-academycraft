@@ -18,16 +18,20 @@ import net.minecraft.sounds.SoundSource;
  * authoritative player attachment, so the mutation is performed only from
  * this server-side effect.</p>
  */
-public class AirCoolingEffect implements SkillEffect {
+public class AirCoolingEffect implements com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect {
 
     @Override
     public String getId() {
         return "air_cooling";
     }
 
+    @Override public float rawCp(float proficiency) { return 400 + 1200 * Math.clamp(proficiency, 0, 1); }
+    @Override public float rawOverload(float proficiency) { return 0; }
+
     @Override
     public boolean canActivate(ServerPlayer player, PlayerAbilityData data) {
-        return data.isDevMode() || data.getCurrentOverload() > 0.0f;
+        return (data.isDevMode() || data.getCurrentOverload() > 0.0f)
+                && com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect.super.canActivate(player, data);
     }
 
     @Override
@@ -43,13 +47,13 @@ public class AirCoolingEffect implements SkillEffect {
                 SoundEvents.PLAYER_HURT_FREEZE, SoundSource.PLAYERS, 1.0f, 1.5f);
 
         if (!data.isDevMode()) {
-            DynamicSkillRules.addExp(player,data,getId(),0.005f);
+            DynamicSkillRules.addExp(player,data,getId(),0.002f - 0.001f * exp);
         }
     }
 
     @Override
     public int getCooldownTicks(float proficiency) {
-        return Math.round(100 - 40 * Math.clamp(proficiency, 0.0f, 1.0f));
+        return Math.round(300 - 240 * Math.clamp(proficiency, 0.0f, 1.0f));
     }
 }
 

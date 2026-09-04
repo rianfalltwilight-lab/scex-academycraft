@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["LCP","EEP"],"key":{"L":{"item":"academy:lasor_component"},"C":{"item":"academy:calc_chip"},"P":{"item":"academy:reinforced_iron_plate"},"E":{"item":"academy:energy_unit_group"}},"result":{"id":"academy:lasor_gun","count":1}}

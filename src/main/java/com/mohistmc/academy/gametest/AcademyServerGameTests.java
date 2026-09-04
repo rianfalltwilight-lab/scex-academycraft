@@ -847,6 +847,7 @@ public final class AcademyServerGameTests {
             }
 
             ItemStack input = new ItemStack(AcademyItems.ENERGY_UNIT.get());
+            input.setDamageValue(0); // explicit full creative fixture; crafted stacks now correctly start empty
             node.getItems().set(0, input);
             node.setEnergy(capacities[tier] - 50);
             node.serverTick();
@@ -1534,7 +1535,7 @@ public final class AcademyServerGameTests {
         var manager = helper.getLevel().getRecipeManager();
         var former = manager.getAllRecipesFor(AcademyRecipeTypes.METAL_FORMING.get());
         var fusor = manager.getAllRecipesFor(AcademyRecipeTypes.IMAG_FUSING.get());
-        if (former.size() != 27 || fusor.size() != 2) {
+        if (former.size() != 28 || fusor.size() != 7) {
             helper.fail("RecipeManager loaded " + former.size() + " Metal Former and " + fusor.size() + " Imag Fusor recipes");
             return;
         }
@@ -1567,9 +1568,17 @@ public final class AcademyServerGameTests {
                 helper.fail("Imag Fusor recipe has no resolvable input: " + holder.id()); return;
             }
             ItemStack input = recipe.input().getItems()[0].copy();
+            input.setCount(recipe.inputCount());
             if (!recipe.matches(new ImagFusorRecipeInput(input), helper.getLevel())
                     || recipe.assemble(new ImagFusorRecipeInput(input), helper.getLevel().registryAccess()).isEmpty()) {
                 helper.fail("Imag Fusor recipe does not match/assemble: " + holder.id()); return;
+            }
+            if (recipe.inputCount() > 1) {
+                ItemStack insufficient = input.copy();
+                insufficient.setCount(recipe.inputCount() - 1);
+                if (recipe.matches(new ImagFusorRecipeInput(insufficient), helper.getLevel())) {
+                    helper.fail("Imag Fusor recipe accepts too few inputs: " + holder.id()); return;
+                }
             }
         }
         Set<String> expectedOfficial = Set.of(
@@ -1589,8 +1598,8 @@ public final class AcademyServerGameTests {
             Set<String> extra = new HashSet<>(loadedOfficial); extra.removeAll(expectedOfficial);
             helper.fail("Official 1.0.7 recipe load drift; missing=" + missing + ", extra=" + extra); return;
         }
-        if (loadedOfficial.size() + former.size() + fusor.size() != 83) {
-            helper.fail("Academy RecipeManager total is not 83"); return;
+        if (loadedOfficial.size() + former.size() + fusor.size() != 89) {
+            helper.fail("Academy RecipeManager total is not 89 after ExtraAcC machine recipes"); return;
         }
         helper.succeed();
     }

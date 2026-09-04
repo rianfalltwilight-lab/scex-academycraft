@@ -15,13 +15,21 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import java.util.Optional;
 
-public record ImagFusorRecipe(Ingredient input, int phaseLiquid, ItemStack output)
+public record ImagFusorRecipe(Ingredient input, int inputCount, int phaseLiquid, ItemStack output)
         implements Recipe<ImagFusorRecipeInput> {
     public ImagFusorRecipe {
+        if (inputCount <= 0) throw new IllegalArgumentException("inputCount must be positive");
         if (phaseLiquid <= 0) throw new IllegalArgumentException("phase_liquid must be positive");
         output = output.copy();
     }
-    @Override public boolean matches(ImagFusorRecipeInput in, Level level) { return input.test(in.input()); }
+
+    public ImagFusorRecipe(Ingredient input, int phaseLiquid, ItemStack output) {
+        this(input, 1, phaseLiquid, output);
+    }
+
+    @Override public boolean matches(ImagFusorRecipeInput in, Level level) {
+        return in.input().getCount() >= inputCount && input.test(in.input());
+    }
     @Override public ItemStack assemble(ImagFusorRecipeInput in, HolderLookup.Provider provider) { return output.copy(); }
     @Override public boolean canCraftInDimensions(int w, int h) { return true; }
     @Override public ItemStack getResultItem(HolderLookup.Provider provider) { return output.copy(); }
@@ -35,6 +43,8 @@ public record ImagFusorRecipe(Ingredient input, int phaseLiquid, ItemStack outpu
     public static final class Serializer implements RecipeSerializer<ImagFusorRecipe> {
         private static final MapCodec<ImagFusorRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                 Ingredient.CODEC.fieldOf("input").forGetter(ImagFusorRecipe::input),
+                com.mojang.serialization.Codec.INT.optionalFieldOf("inputCount", 1)
+                        .forGetter(ImagFusorRecipe::inputCount),
                 // MohistMC upstream 00e9cf09 uses phaseLiquid. The optional
                 // snake-case field is decode-only compatibility for rebuild
                 // 0.0.4-0.0.10 datapacks.
@@ -43,13 +53,15 @@ public record ImagFusorRecipe(Ingredient input, int phaseLiquid, ItemStack outpu
                 com.mojang.serialization.Codec.INT.optionalFieldOf("phase_liquid")
                         .forGetter(recipe -> Optional.empty()),
                 ItemStack.CODEC.fieldOf("output").forGetter(ImagFusorRecipe::output)
-        ).apply(i, (input, currentAmount, legacyAmount, output) -> new ImagFusorRecipe(
+        ).apply(i, (input, inputCount, currentAmount, legacyAmount, output) -> new ImagFusorRecipe(
                 input,
+                inputCount,
                 currentAmount.orElseGet(() -> legacyAmount.orElseThrow(
                         () -> new IllegalArgumentException("phaseLiquid is required"))),
                 output)));
         private static final StreamCodec<RegistryFriendlyByteBuf, ImagFusorRecipe> STREAM_CODEC = StreamCodec.composite(
                 Ingredient.CONTENTS_STREAM_CODEC, ImagFusorRecipe::input,
+                ByteBufCodecs.VAR_INT, ImagFusorRecipe::inputCount,
                 ByteBufCodecs.VAR_INT, ImagFusorRecipe::phaseLiquid,
                 ItemStack.STREAM_CODEC, ImagFusorRecipe::output,
                 ImagFusorRecipe::new);

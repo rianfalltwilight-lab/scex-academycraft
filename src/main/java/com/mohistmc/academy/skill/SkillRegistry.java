@@ -2,6 +2,7 @@ package com.mohistmc.academy.skill;
 
 import com.mohistmc.academy.skill.ability.MagManipEffect;
 import com.mohistmc.academy.skill.ability.aerohand.AeroSeparatorEffect;
+import com.mohistmc.academy.skill.ability.aerohand.AeroToggleEffect;
 import com.mohistmc.academy.skill.ability.aerohand.AirBladeEffect;
 import com.mohistmc.academy.skill.ability.aerohand.AirCoolingEffect;
 import com.mohistmc.academy.skill.ability.aerohand.AirJetEffect;
@@ -34,6 +35,7 @@ import com.mohistmc.academy.skill.ability.telekinesis.PsychoNeedlingEffect;
 import com.mohistmc.academy.skill.ability.telekinesis.PsychoSlamEffect;
 import com.mohistmc.academy.skill.ability.telekinesis.PsychoThrowingEffect;
 import com.mohistmc.academy.skill.ability.telekinesis.PsychoTransmissionEffect;
+import com.mohistmc.academy.skill.ability.telekinesis.TelekinesisToggleEffect;
 import com.mohistmc.academy.skill.ability.teleporter.FlashingEffect;
 import com.mohistmc.academy.skill.ability.teleporter.FleshRippingEffect;
 import com.mohistmc.academy.skill.ability.teleporter.LocationTeleportEffect;
@@ -154,6 +156,8 @@ public class SkillRegistry {
         registerEffect(new BomberLanceEffect());
         registerEffect(new StormCoreEffect());
         registerEffect(new AeroSeparatorEffect());
+        registerEffect(new AeroToggleEffect("offense_armour"));
+        registerEffect(new AeroToggleEffect("flying"));
 
         // Telekinesis
         registerEffect(new PsychoThrowingEffect());
@@ -163,6 +167,8 @@ public class SkillRegistry {
         registerEffect(new OverloadThinkingEffect());
         registerEffect(new PsychoSlamEffect());
         registerEffect(new PaperDrillEffect());
+        registerEffect(new TelekinesisToggleEffect("psycho_harden"));
+        registerEffect(new TelekinesisToggleEffect("liquid_shadow"));
     }
 
     private static void bindEffects() {
@@ -554,78 +560,91 @@ public class SkillRegistry {
 
         // 火山球
         registerSkill(new Skill.Builder("volcanic_ball", cat, 1)
-                .cpCost(10).overload(5).build());
+                .position(20, 25)
+                .cpCost(40).overload(40).build());
 
         // 上升气流(被动)
         registerSkill(new Skill.Builder("ascending_air", cat, 1)
+                .position(30, 70)
                 .type(SkillType.PASSIVE)
                 .build());
 
         // 空气刃
         registerSkill(new Skill.Builder("air_blade", cat, 2)
+                .position(65, 20)
                 .prereq("volcanic_ball", 0.5f)
-                .cpCost(12).overload(15).build());
+                .cpCost(100).overload(60).build());
 
         // 气流(被动)
         registerSkill(new Skill.Builder("airflow", cat, 2)
+                .position(75, 85)
                 .type(SkillType.PASSIVE)
                 .prereq("ascending_air", 0.5f).build());
 
         // 空气冷却
         registerSkill(new Skill.Builder("air_cooling", cat, 3)
+                .position(80, 55)
                 .prereq("ascending_air", 0.0f)
                 // Cooling must remain usable at maximum overload and must not
                 // first heat the player it is meant to cool.
-                .cpCost(20).overload(0).build());
+                .cpCost(400).overload(0).build());
 
         // 空气墙
         registerSkill(new Skill.Builder("air_wall", cat, 3)
+                .position(110, 35)
                 .prereq("air_blade", 0.5f)
-                .cpCost(30).overload(25).build());
+                .cpCost(500).overload(90).build());
 
         // 空气喷射
         registerSkill(new Skill.Builder("air_jet", cat, 3)
+                .position(120, 75)
                 .prereq("airflow", 0.1f)
-                .cpCost(15).overload(10).build());
+                .cpCost(200).overload(80).build());
 
         // 大脑训练课程(被动)
         registerSkill(new Skill.Builder("brain_course", cat, 3)
+                .position(30, 110)
                 .type(SkillType.PASSIVE)
                 .anyLevelPrereq(3).build());
 
-        // 攻击装甲(被动)
+        // 攻击装甲（原版为按键开关的持续主动技能）
         registerSkill(new Skill.Builder("offense_armour", cat, 4)
-                .type(SkillType.PASSIVE)
+                .position(160, 45)
                 .prereq("air_wall", 1.0f).build());
 
         // 轰炸长矛
         registerSkill(new Skill.Builder("bomber_lance", cat, 4)
-                .prereq("air_wall", 0.5f)
-                .cpCost(50).overload(40).build());
+                .position(150, 10)
+                .prereq("air_blade", 0.5f)
+                .cpCost(600).overload(240).build());
 
         // 大脑训练课程(高级)(被动)
         registerSkill(new Skill.Builder("brain_course_advanced", cat, 4)
+                .position(115, 110)
                 .type(SkillType.PASSIVE)
                 .prereq("brain_course", 0.0f)
                 .anyLevelPrereq(4).build());
 
-        // 飞行(被动)
-        registerSkill(new Skill.Builder("flying", cat, 5)
-                .type(SkillType.PASSIVE)
-                .prereq("offense_armour", 0.5f).build());
+        // 飞行（原版为按键开关的持续主动技能）
+        registerSkill(new Skill.Builder("flying", cat, 4)
+                .position(165, 85)
+                .prereq("air_jet", 0.5f).build());
 
         // 风暴核心
         registerSkill(new Skill.Builder("storm_core", cat, 5)
-                .prereq("air_wall", 1.0f)
-                .cpCost(60).overload(50).build());
+                .position(205, 65)
+                .prereq("flying", 0.5f)
+                .cpCost(3000).overload(300).build());
 
         // 空气分离器
         registerSkill(new Skill.Builder("aero_separator", cat, 5)
-                .prereq("air_wall", 1.0f)
-                .cpCost(80).overload(60).build());
+                .position(200, 25)
+                .prereq("bomber_lance", 0.5f)
+                .cpCost(1200).overload(480).build());
 
         // 思维修养课程(被动)
         registerSkill(new Skill.Builder("mind_course", cat, 5)
+                .position(205, 110)
                 .type(SkillType.PASSIVE)
                 .prereq("brain_course_advanced", 0.0f)
                 .anyLevelPrereq(5).build());
@@ -636,70 +655,82 @@ public class SkillRegistry {
 
         // 念力投掷
         registerSkill(new Skill.Builder("psycho_throwing", cat, 1)
-                .cpCost(10).overload(5).build());
+                .position(20, 25)
+                .cpCost(400).overload(30).build());
 
         // 念力传输
         registerSkill(new Skill.Builder("psycho_transmission", cat, 1)
-                .cpCost(5).overload(5).build());
+                .position(30, 65)
+                .cpCost(0).overload(5).build());
 
         // 念力针
         registerSkill(new Skill.Builder("psycho_needling", cat, 2)
+                .position(65, 20)
                 .prereq("psycho_throwing", 0.5f)
-                .cpCost(12).overload(15).build());
+                .cpCost(800).overload(20).build());
 
         // 绝缘(被动)
-        registerSkill(new Skill.Builder("insulation", cat, 2)
+        registerSkill(new Skill.Builder("insulation", cat, 1)
+                .position(70, 70)
                 .type(SkillType.PASSIVE)
                 .prereq("psycho_transmission", 0.0f).build());
 
         // 巡航炸弹
         registerSkill(new Skill.Builder("cruise_bomb", cat, 3)
+                .position(110, 15)
                 .prereq("psycho_needling", 0.5f)
-                .cpCost(25).overload(20).build());
+                .cpCost(0).overload(0).build());
 
         // 过载思维
         registerSkill(new Skill.Builder("overload_thinking", cat, 3)
+                .position(115, 55)
                 .prereq("insulation", 0.0f)
                 .cpCost(0).overload(0).build());
 
         // 完美纸张(被动)
         registerSkill(new Skill.Builder("perfect_paper", cat, 3)
+                .position(120, 85)
                 .type(SkillType.PASSIVE)
                 .prereq("insulation", 0.0f).build());
 
         // 大脑训练课程(被动)
         registerSkill(new Skill.Builder("brain_course", cat, 3)
+                .position(30, 110)
                 .type(SkillType.PASSIVE)
                 .anyLevelPrereq(3).build());
 
         // 念力猛击
         registerSkill(new Skill.Builder("psycho_slam", cat, 4)
+                .position(160, 30)
                 .prereq("cruise_bomb", 0.5f)
-                .cpCost(50).overload(40).build());
+                .cpCost(3000).overload(180).build());
 
-        // 念力硬化(被动)
+        // 念力硬化（原版为按键开关的持续主动技能）
         registerSkill(new Skill.Builder("psycho_harden", cat, 4)
-                .type(SkillType.PASSIVE)
-                .prereq("perfect_paper", 0.5f).build());
+                .position(165, 60)
+                .prereq("overload_thinking", 0.5f).build());
 
         // 大脑训练课程(高级)(被动)
         registerSkill(new Skill.Builder("brain_course_advanced", cat, 4)
+                .position(115, 110)
                 .type(SkillType.PASSIVE)
                 .prereq("brain_course", 0.0f)
                 .anyLevelPrereq(4).build());
 
-        // 液态阴影(被动)
+        // 液态阴影（原版为按键开关的持续主动技能）
         registerSkill(new Skill.Builder("liquid_shadow", cat, 5)
-                .type(SkillType.PASSIVE)
-                .prereq("psycho_slam", 0.5f).build());
+                .position(190, 15)
+                .prereq("cruise_bomb", 0.9f).build());
 
         // 纸张钻头
         registerSkill(new Skill.Builder("paper_drill", cat, 5)
-                .prereq("perfect_paper", 1.0f)
-                .cpCost(60).overload(50).build());
+                .position(205, 80)
+                .prereq("perfect_paper", 0.5f)
+                .cpCost(4000).overload(120).build());
 
         // 思维修养课程(被动)
         registerSkill(new Skill.Builder("mind_course", cat, 5)
+                .position(205, 110)
                 .type(SkillType.PASSIVE)
                 .prereq("brain_course_advanced", 0.0f)
                 .anyLevelPrereq(5).build());

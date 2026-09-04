@@ -18,7 +18,7 @@ final class BuildProvenanceContractTest {
 
         assertTrue(info.contains("MohistMC-Upstream-SHA=00e9cf09fc4c52d2f9b3b3af7d4cda140a4ccf1c"));
         assertTrue(info.contains("Legacy-Upstream-SHA=7b1401cd420bd6888a2b9d8db5cd8a69fe314bb9"));
-        assertTrue(info.contains("Mod-Version=0.0.16"));
+        assertTrue(info.contains("Mod-Version=0.0.17"));
         assertTrue(info.contains("JUnit-Tests="));
         assertTrue(info.contains("GameTests="));
         assertTrue(info.contains("Client-Machine-Gate="));

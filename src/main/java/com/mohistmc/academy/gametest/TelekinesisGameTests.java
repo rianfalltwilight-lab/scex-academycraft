@@ -24,6 +24,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @GameTestHolder(AcademyCraft.MODID)
 @PrefixGameTestTemplate(false)
@@ -56,6 +57,7 @@ public final class TelekinesisGameTests {
             helper.fail("visible collectible item was not a valid transmission target"); return;
         }
         effect.execute(player, data);
+        PsychoTransmissionEffect.tick(new PlayerTickEvent.Post(player));
         if (player.getInventory().countItem(Items.DIAMOND) != 1 || item.isAlive()) {
             helper.fail("transmission did not move the targeted item into inventory"); return;
         }
@@ -83,6 +85,9 @@ public final class TelekinesisGameTests {
             helper.fail("paper drill did not consume exactly one full stack after acknowledgement"); return;
         }
         effect.onChargingAbort(player, data);
+        if (player.getInventory().countItem(Items.PAPER) != 64) {
+            helper.fail("paper drill did not return its exact paper stack on abort"); return;
+        }
         helper.succeed();
     }
 
@@ -124,8 +129,8 @@ public final class TelekinesisGameTests {
                     helper.fail("Academy ability damage unexpectedly failed after spawn protection"); return;
                 }
                 float taken = before - defender.getHealth();
-                if (Math.abs(taken - 3.5f) > 0.05f) {
-                    helper.fail("favored insulation expected 3.5 damage but took " + taken); return;
+                if (Math.abs(taken - 6.0f) > 0.05f) {
+                    helper.fail("mastered Electromaster insulation expected 6.0 damage but took " + taken); return;
                 }
             } finally {
                 helper.getLevel().getServer().setPvpAllowed(vanillaPvp);
@@ -141,7 +146,7 @@ public final class TelekinesisGameTests {
         player.setGameMode(GameType.SURVIVAL);
         telekinesis(player, "liquid_shadow");
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.WATER_BUCKET));
-        if (!TelekinesisPassiveHandler.toggleLiquidShadow(player, InteractionHand.MAIN_HAND)
+        if (!TelekinesisPassiveHandler.toggleLiquidShadow(player)
                 || !player.getMainHandItem().is(Items.BUCKET)) {
             helper.fail("liquid shadow did not transactionally consume one water bucket"); return;
         }
@@ -151,7 +156,7 @@ public final class TelekinesisGameTests {
         if (shadows.size() != 1) {
             helper.fail("liquid shadow expected one follower, found " + shadows.size()); return;
         }
-        if (!TelekinesisPassiveHandler.toggleLiquidShadow(player, InteractionHand.MAIN_HAND)
+        if (!TelekinesisPassiveHandler.toggleLiquidShadow(player)
                 || shadows.getFirst().isAlive()) {
             helper.fail("second toggle did not terminate the existing shadow"); return;
         }

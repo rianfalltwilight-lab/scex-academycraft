@@ -9,17 +9,17 @@ import org.junit.jupiter.api.Test;
 
 class TelekinesisRulesTest {
     @Test void overloadThinkingTradesOverloadForIncreasingCpRecovery() {
-        assertEquals(80.0f, TelekinesisRules.overloadThinkingCost(0), 0.001f);
-        assertEquals(50.0f, TelekinesisRules.overloadThinkingCost(1), 0.001f);
-        assertEquals(220.0f, TelekinesisRules.overloadThinkingRestore(0), 0.001f);
-        assertEquals(420.0f, TelekinesisRules.overloadThinkingRestore(1), 0.001f);
+        assertEquals(100.0f, TelekinesisRules.overloadThinkingCost(0), 0.001f);
+        assertEquals(100.0f, TelekinesisRules.overloadThinkingCost(1), 0.001f);
+        assertEquals(1000.0f, TelekinesisRules.overloadThinkingRestore(0), 0.001f);
+        assertEquals(2000.0f, TelekinesisRules.overloadThinkingRestore(1), 0.001f);
     }
 
     @Test void insulationIsStrongestAgainstElectromasterAndMeltdowner() {
         float generic = TelekinesisRules.mitigateAbilityDamage(20, 1, false);
         float favored = TelekinesisRules.mitigateAbilityDamage(20, 1, true);
-        assertEquals(14.0f, generic, 0.001f);
-        assertEquals(7.0f, favored, 0.001f);
+        assertEquals(16.0f, generic, 0.001f);
+        assertEquals(12.0f, favored, 0.001f);
         assertTrue(favored < generic);
     }
 
@@ -32,8 +32,9 @@ class TelekinesisRulesTest {
 
     @Test void paperDrillHasAnExactFullStackAndBoundedPulseContract() {
         assertEquals(64, TelekinesisRules.PAPER_DRILL_REQUIRED_PAPER);
-        assertEquals(5, TelekinesisRules.PAPER_DRILL_PULSE_INTERVAL);
+        assertEquals(1, TelekinesisRules.PAPER_DRILL_PULSE_INTERVAL);
         assertTrue(TelekinesisRules.paperDrillDamage(1) > TelekinesisRules.paperDrillDamage(0));
-        assertTrue(TelekinesisRules.paperDrillRange(1) > TelekinesisRules.paperDrillRange(0));
+        assertEquals(5.0f, TelekinesisRules.paperDrillRange(0), 0.001f);
+        assertEquals(5.0f, TelekinesisRules.paperDrillRange(1), 0.001f);
     }
 }

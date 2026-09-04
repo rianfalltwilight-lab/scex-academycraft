@@ -3,13 +3,12 @@ package com.mohistmc.academy.skill.ability.aerohand;
 import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.skill.AbilityCategory;
 import com.mohistmc.academy.skill.AcademyAttachments;
+import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
-import net.neoforged.neoforge.event.entity.living.LivingBreatheEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -69,31 +68,37 @@ public final class AerohandGameTests {
         });
     }
 
-    @GameTest(template = EMPTY)
+    @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void passiveFallCapAndMasteredBreathingAreServerOwned(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         PlayerAbilityData data = aerohand(player, "ascending_air", "airflow");
         data.setProficiency("ascending_air", 1.0f);
         data.setProficiency("airflow", 1.0f);
-
-        LivingFallEvent fall = new LivingFallEvent(player, 50.0f, 1.0f);
-        AeroPassiveRuntime.falling(fall);
-        if (Math.abs(fall.getDistance() - 5.0f) > 0.001f) {
-            helper.fail("ascending air did not cap mastery fall distance"); return;
-        }
-
-        LivingBreatheEvent breathe = new LivingBreatheEvent(player, false, 1, 4);
-        AeroPassiveRuntime.breathing(breathe);
-        if (!breathe.canBreathe() || breathe.getRefillAirAmount() < 4) {
-            helper.fail("mastered airflow did not permit water breathing"); return;
-        }
-        helper.succeed();
+        helper.runAfterDelay(65, () -> {
+            float before = player.getHealth();
+            AcademyDamageHelper.hurtSelf(player, player, player.damageSources().fall(), 50.0F);
+            float dealt = before - player.getHealth();
+            if (dealt > 5.01F) {
+                helper.fail("ascending air did not cap mastery fall damage"); return;
+            }
+            player.setAirSupply(1);
+            while (player.tickCount % 20 != 0) player.tickCount++;
+            AeroPassiveRuntime.playerTick(new PlayerTickEvent.Post(player));
+            if (player.getAirSupply() != player.getMaxAirSupply()) {
+                helper.fail("mastered airflow did not replenish air"); return;
+            }
+            helper.succeed();
+        });
     }
 
     @GameTest(template = EMPTY)
     public static void flyingRevokesOnlyTheFlightItGranted(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         PlayerAbilityData data = aerohand(player, "flying");
+        data.setDevMode(true);
+        if (!AeroPassiveRuntime.toggleFlying(player, data)) {
+            helper.fail("flying context could not start"); return;
+        }
         AeroPassiveRuntime.playerTick(new PlayerTickEvent.Post(player));
         if (!player.getAbilities().mayfly) {
             helper.fail("flying passive did not grant survival flight"); return;

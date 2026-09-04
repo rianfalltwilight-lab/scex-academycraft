@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" P ","PEP","UMU"],"key":{"P":{"item":"academy:reinforced_iron_plate"},"E":{"item":"academy:energy_convert_component"},"U":{"item":"minecraft:piston"},"M":{"item":"academy:matter_unit_none"}},"result":{"id":"academy:air_jet","count":1}}

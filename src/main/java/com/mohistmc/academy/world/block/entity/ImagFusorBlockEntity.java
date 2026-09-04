@@ -168,7 +168,7 @@ public class ImagFusorBlockEntity extends AcademyContainerBlockEntity implements
         if (processingTime >= PROCESSING_DURATION) {
             processingTime = 0;
             tank.drain(recipe.phaseLiquid(), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
-            input.shrink(1);
+            input.shrink(recipe.inputCount());
             if (output.isEmpty()) {
                 getItems().set(OUTPUT_SLOT, result.copy());
             } else {

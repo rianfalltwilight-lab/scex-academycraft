@@ -33,9 +33,13 @@ public final class OverloadThinkingEffect implements SkillEffect {
                 player.getZ(), 24, 0.5);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.8f, 1.5f);
+        if (!data.isDevMode()) DynamicSkillRules.addExp(player, data, getId(),
+                0.01F - 0.005F * Math.clamp(proficiency, 0, 1));
     }
 
+    @Override public boolean grantsActivationProficiency() { return false; }
+
     @Override public int getCooldownTicks(float proficiency) {
-        return (int) (100 - 40 * Math.max(0, Math.min(1, proficiency)));
+        return Math.round(300 - 240 * Math.clamp(proficiency, 0, 1));
     }
 }

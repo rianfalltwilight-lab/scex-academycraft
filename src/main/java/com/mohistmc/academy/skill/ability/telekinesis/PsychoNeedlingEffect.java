@@ -1,63 +1,82 @@
 package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.config.DynamicSkillRules;
-
-import com.mohistmc.academy.world.effect.EffectHelper;
+import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
-import com.mohistmc.academy.skill.SkillEffect;
+import com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect;
+import com.mohistmc.academy.world.AcademyItems;
+import com.mohistmc.academy.world.effect.EffectHelper;
+import java.util.Comparator;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import static com.mohistmc.academy.utils.MathUtils.lerpf;
-
-/**
- * 念力针 —— 向前方发射念力针，穿透敌人造成伤害
- */
-public class PsychoNeedlingEffect implements SkillEffect {
+/** Consumes and returns one Academy needle while firing an armor-bypassing psycho projectile. */
+public final class PsychoNeedlingEffect implements DynamicOneShotSkillEffect {
+    @Override public String getId() { return "psycho_needling"; }
+    @Override public float rawCp(float p) { return 800 - 400 * Math.clamp(p, 0, 1); }
+    @Override public float rawOverload(float p) { return 20 - 10 * Math.clamp(p, 0, 1); }
 
     @Override
-    public String getId() {
-        return "psycho_needling";
+    public boolean canActivate(ServerPlayer player, PlayerAbilityData data) {
+        return findNeedle(player) != null && DynamicOneShotSkillEffect.super.canActivate(player, data);
+    }
+
+    @Override
+    public boolean executeAndReport(ServerPlayer player, PlayerAbilityData data) {
+        ItemStack needle = findNeedle(player);
+        if (needle == null) return false;
+        float p = data.getProficiency(getId());
+        if (!DynamicSkillRules.tryPay(data, getId(), rawCp(p), rawOverload(p))) return false;
+        if (!player.getAbilities().instabuild) needle.shrink(1);
+        execute(player, data);
+        return true;
+    }
+
+    private static ItemStack findNeedle(ServerPlayer player) {
+        if (player.getAbilities().instabuild) return ItemStack.EMPTY;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(AcademyItems.NEEDLE.get())) return stack;
+        }
+        return null;
     }
 
     @Override
     public void execute(ServerPlayer player, PlayerAbilityData data) {
-        float exp = data.getProficiency(getId());
-        float damage = lerpf(8.0f, 16.0f, exp);
-        double range = lerpf(15.0f, 25.0f, exp);
-        float needleWidth = lerpf(0.5f, 1.0f, exp);
-
+        float p = data.getProficiency(getId());
         ServerLevel level = player.serverLevel();
-        Vec3 eyePos = player.getEyePosition();
-        Vec3 lookVec = player.getLookAngle();
-
-        for (double d = 1.0; d <= range; d += 0.5) {
-            Vec3 checkPos = eyePos.add(lookVec.scale(d));
-            EffectHelper.glowBurst(level, checkPos.x, checkPos.y, checkPos.z, 1, 0.15f, 0xAAFFFFFF, 10, needleWidth / 2);
-
-            AABB area = new AABB(
-                    checkPos.x - needleWidth, checkPos.y - needleWidth, checkPos.z - needleWidth,
-                    checkPos.x + needleWidth, checkPos.y + needleWidth, checkPos.z + needleWidth
-            );
-            for (Entity e : level.getEntities(player, area, Entity::isAlive)) {
-                if (e instanceof LivingEntity living && e != player) {
-                    com.mohistmc.academy.skill.AcademyDamageHelper.hurt(player,living,player.damageSources().playerAttack(player), damage);
-                }
-            }
-        }
-
-        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0f, 1.8f);
-
-        if (!data.isDevMode()) {
-            DynamicSkillRules.addExp(player,data,getId(),0.005f);
-        }
+        Vec3 from = player.getEyePosition();
+        Vec3 direction = player.getLookAngle().normalize();
+        Vec3 intended = from.add(direction.scale(32 + 16 * p));
+        var blockHit = level.clip(new ClipContext(from, intended, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
+        Vec3 to = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
+        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, new AABB(from, to).inflate(0.4),
+                        entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
+                                && AcademyDamageHelper.allowsTarget(entity)
+                                && entity.getBoundingBox().inflate(0.25).clip(from, to).isPresent())
+                .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(player))).orElse(null);
+        Vec3 impact = target == null ? to : target.getBoundingBox().getCenter();
+        if (target != null) AcademyDamageHelper.hurt(player, target, player.damageSources().magic(),
+                DynamicSkillRules.damage(getId(), 4 + 4 * p));
+        ItemEntity returned = new ItemEntity(level, impact.x, impact.y, impact.z,
+                new ItemStack(AcademyItems.NEEDLE.get()));
+        returned.setDefaultPickUpDelay();
+        level.addFreshEntity(returned);
+        EffectHelper.psychoBurst(level, impact.x, impact.y, impact.z, 8, 0.2);
+        level.playSound(null, player.blockPosition(), SoundEvents.ARROW_SHOOT,
+                SoundSource.PLAYERS, 0.8F, 1.8F);
+        if (!data.isDevMode()) DynamicSkillRules.addExp(player, data, getId(), 0.002F - 0.001F * p);
     }
-}
 
+    @Override public int getCooldownTicks(float p) { return Math.round(20 - 10 * Math.clamp(p, 0, 1)); }
+}
