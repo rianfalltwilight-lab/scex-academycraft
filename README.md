@@ -1,3 +1,50 @@
+# SCEX AcademyCraft 1.21.1
+
+> 本仓库由 **Space Creator EX（SCEX）服务器**维护。Minecraft 1.21.1 / NeoForge 重建、测试和公开版整理主要由 **OpenAI Codex** 在维护者监督下完成，是明确标注的 AI / Vibe Coding 项目。详见 [AI 参与开发声明](AI-GENERATED.md)。
+
+这是 AcademyCraft 的 SCEX 非官方维护与重建版本，目标是在 Minecraft 1.21.1 + NeoForge 上恢复 1.12.2 最终可玩版本的超能力、机器、无线能源网络、终端、UI 与表现。
+
+- 老版行为基准：[`LambdaInnovation/AcademyCraft`](https://github.com/LambdaInnovation/AcademyCraft)，Minecraft 1.12.2 最终源码快照；
+- 1.21.1 起点：[`MohistMC/AcademyCraft`](https://github.com/MohistMC/AcademyCraft)；
+- 本仓库不是 LambdaInnovation、MohistMC、NeoForge 或《某科学的超电磁炮》的官方发行版。
+
+## 当前状态
+
+当前公开测试版为 **0.0.15**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁。
+
+这不代表已经完成 100% 行为或视觉等价。最近一次完整独立复审对 0.0.14 的证据加权估计约为 **62%（主观区间 50%–72%）**；0.0.15 增加了旧机器所有权迁移和正式客户端门禁，仍需逐技能、双客户端、JEI 实际转移、多缩放 GUI 和长期存档测试。测试数、文件数、类名或注册数量不会被当作功能完成率。
+
+请先备份世界，并在非生产实例验证后再用于服务器。
+
+## 运行与安装
+
+| 组件 | 版本 |
+|---|---|
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.248 |
+| Java | 21 |
+| AcademyCraft | 0.0.15 |
+| JEI / Jade | 可选，不是硬前置 |
+
+从 Releases 下载 `AcademyCraft-neoforge-1.21.1-0.0.15-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。
+
+0.0.15 JAR SHA-256：
+
+```text
+5D24B7B0DB950CF7D40B9E8C70A4C112D916289E984ED01CADE4F9325601BBE6
+```
+
+## 构建与测试
+
+```powershell
+.\gradlew.bat clean build --no-daemon
+.\gradlew.bat runGameTestServer --no-daemon
+```
+
+Linux/macOS 使用 `./gradlew`。成品输出到 `build/libs/`；不同证据层级及其限制见 [docs/TESTING.md](docs/TESTING.md)。
+
+---
+
 ![](https://raw.githubusercontent.com/MohistMC/AcademyCraft/master/blob/logo.png)
 
 A Minecraft mod about superability. The inspiration of AcademyCraft comes from [A Certain Scientific Railgun (とある科学の超電磁砲)](https://en.wikipedia.org/wiki/A_Certain_Scientific_Railgun) but the mod content is not limited of the background.
@@ -58,6 +105,8 @@ You can support developement of AcademyCraft by donating. This will secure us mo
 You would also be able to be in our donator list, both on website and in-game :beer:
 
 ## License
+
+本仓库的 SCEX / AI 辅助修改以“修改版”身份发布，不改变上游代码和素材的权利归属。来源、固定 commit 与复用素材范围见 [NOTICE](NOTICE)。以下为沿用的上游许可说明；这不是法律意见。
 
 All versions of AcademyCraft are licensed under [GPLv3](http://www.gnu.org/licenses/gpl.html).
 
