@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABC",
+    " D "
+  ],
+  "key": {
+    "A": { "item": "academy:energy_unit" },
+    "B": { "item": "academy:machine_frame" },
+    "C": { "item": "academy:reso_crystal" },
+    "D": { "item": "academy:energy_convert_component" }
+  },
+  "result": { "count": 1, "id": "academy:rf_output" }
+}

@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "BCD",
+    "EFG"
+  ],
+  "key": {
+    "A": {
+      "item": "academy:developer_portable"
+    },
+    "B": {
+      "item": "academy:mat_core_0"
+    },
+    "C": {
+      "item": "minecraft:white_bed"
+    },
+    "D": {
+      "item": "minecraft:piston"
+    },
+    "E": {
+      "item": "academy:crystal_normal"
+    },
+    "F": {
+      "item": "academy:machine_frame"
+    },
+    "G": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:dev_normal"
+  }
+}

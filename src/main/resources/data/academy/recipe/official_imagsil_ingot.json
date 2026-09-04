@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "academy:imagsil_ore"
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:imag_silicon_ingot"
+  },
+  "experience": 0.8,
+  "cookingtime": 200
+}

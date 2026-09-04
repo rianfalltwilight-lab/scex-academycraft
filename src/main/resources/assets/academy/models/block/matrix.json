@@ -1,0 +1,16 @@
+{
+  "loader": "neoforge:obj",
+  "model": "academy:models/matrix.obj",
+  "flip_v": true,
+  "visibility": {
+    "Main": true,
+    "Core": true,
+    "Shield": false,
+    "Duplicate01": false,
+    "Duplicate02": false
+  },
+  "textures": {
+    "texture0": "academy:block/matrix",
+    "particle": "academy:block/matrix"
+  }
+}

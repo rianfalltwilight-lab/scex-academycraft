@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "entries": [
+    "academy:induction_factor_abandoned_mineshaft",
+    "academy:induction_factor_desert_pyramid",
+    "academy:induction_factor_jungle_temple",
+    "academy:induction_factor_stronghold_library",
+    "academy:induction_factor_simple_dungeon",
+    "academy:media_abandoned_mineshaft",
+    "academy:media_desert_pyramid",
+    "academy:media_jungle_temple",
+    "academy:media_stronghold_library",
+    "academy:media_simple_dungeon"
+  ]
+}

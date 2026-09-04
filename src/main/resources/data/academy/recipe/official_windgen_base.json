@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "A",
+    "B",
+    "C"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "academy:machine_frame"
+    },
+    "C": {
+      "item": "academy:energy_convert_component"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:windgen_base"
+  }
+}

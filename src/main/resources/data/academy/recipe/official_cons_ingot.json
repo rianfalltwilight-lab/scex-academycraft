@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "academy:constraint_metal"
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:constraint_ingot"
+  },
+  "experience": 0.7,
+  "cookingtime": 200
+}

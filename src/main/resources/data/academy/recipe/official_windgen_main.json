@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "BCB",
+    " A "
+  ],
+  "key": {
+    "A": {
+      "item": "academy:machine_frame"
+    },
+    "B": {
+      "item": "academy:constraint_plate"
+    },
+    "C": {
+      "item": "academy:energy_convert_component"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:windgen_main"
+  }
+}

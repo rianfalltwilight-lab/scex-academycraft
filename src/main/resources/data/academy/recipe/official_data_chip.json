@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AAA",
+    " B "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:redstone"
+    },
+    "B": {
+      "item": "academy:reinforced_iron_plate"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:data_chip"
+  }
+}

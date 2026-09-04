@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "A",
+    "B",
+    "C"
+  ],
+  "key": {
+    "A": {
+      "item": "academy:resonance_component"
+    },
+    "B": {
+      "item": "academy:data_chip"
+    },
+    "C": {
+      "item": "academy:info_component"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "academy:app_freq_transmitter"
+  }
+}

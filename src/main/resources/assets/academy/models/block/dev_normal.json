@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:obj",
+  "model": "academy:models/dev_normal.obj",
+  "flip_v": true,
+  "textures": {
+    "texture0": "academy:block/dev_normal",
+    "particle": "academy:block/dev_normal"
+  }
+}

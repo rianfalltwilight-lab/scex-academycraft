@@ -1,0 +1,60 @@
+package com.mohistmc.academy.world;
+
+import com.mohistmc.academy.AcademyCraft;
+import com.mohistmc.academy.world.block.entity.CatEngineBlockEntity;
+import com.mohistmc.academy.world.block.entity.AbilityInterfererBlockEntity;
+import com.mohistmc.academy.world.block.entity.DevAdvancedBlockEntity;
+import com.mohistmc.academy.world.block.entity.DevAdvancedSubBlockEntity;
+import com.mohistmc.academy.world.block.entity.DevNormalBlockEntity;
+import com.mohistmc.academy.world.block.entity.DevNormalSubBlockEntity;
+import com.mohistmc.academy.world.block.entity.ImagFusorBlockEntity;
+import com.mohistmc.academy.world.block.entity.MatrixBlockEntity;
+import com.mohistmc.academy.world.block.entity.MatrixSubBlockEntity;
+import com.mohistmc.academy.world.block.entity.MetalFomerBlockEntity;
+import com.mohistmc.academy.world.block.entity.NodeAdvancedBlockEntity;
+import com.mohistmc.academy.world.block.entity.NodeBasicBlockEntity;
+import com.mohistmc.academy.world.block.entity.NodeStandardBlockEntity;
+import com.mohistmc.academy.world.block.entity.PhaseGenBlockEntity;
+import com.mohistmc.academy.world.block.entity.PhaseLiquidBlockEntity;
+import com.mohistmc.academy.world.block.entity.SolarGenBlockEntity;
+import com.mohistmc.academy.world.block.entity.EnergyBridgeInputBlockEntity;
+import com.mohistmc.academy.world.block.entity.EnergyBridgeOutputBlockEntity;
+import com.mohistmc.academy.world.block.entity.WindGenBaseBlockEntity;
+import com.mohistmc.academy.world.block.entity.WindGenBaseSubBlockEntity;
+import com.mohistmc.academy.world.block.entity.WindGenFanBlockEntity;
+import com.mohistmc.academy.world.block.entity.WindGenMainBlockEntity;
+import com.mohistmc.academy.world.block.entity.WindGenPillarBlockEntity;
+import java.util.function.Supplier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public class AcademyBlockEntities {
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, AcademyCraft.MODID);
+
+
+    public static final Supplier<BlockEntityType<CatEngineBlockEntity>> CAT_ENGINE = BLOCK_ENTITIES.register("cat_engine", () -> BlockEntityType.Builder.of(CatEngineBlockEntity::new, AcademyBlocks.CAT_ENGINE.get()).build(null));
+    public static final Supplier<BlockEntityType<AbilityInterfererBlockEntity>> ABILITY_INTERFERER = BLOCK_ENTITIES.register("ability_interferer", () -> BlockEntityType.Builder.of(AbilityInterfererBlockEntity::new, AcademyBlocks.ABILITY_INTERFERER.get()).build(null));
+    public static final Supplier<BlockEntityType<DevNormalBlockEntity>> DEV_NORMAL = BLOCK_ENTITIES.register("dev_normal", () -> BlockEntityType.Builder.of(DevNormalBlockEntity::new, AcademyBlocks.DEV_NORMAL.get()).build(null));
+    public static final Supplier<BlockEntityType<DevAdvancedBlockEntity>> DEV_ADVANCED = BLOCK_ENTITIES.register("dev_advanced", () -> BlockEntityType.Builder.of(DevAdvancedBlockEntity::new, AcademyBlocks.DEV_ADVANCED.get()).build(null));
+    public static final Supplier<BlockEntityType<DevNormalSubBlockEntity>> DEV_NORMAL_SUB = BLOCK_ENTITIES.register("dev_normal_sub", () -> BlockEntityType.Builder.of(DevNormalSubBlockEntity::new, AcademyBlocks.DEV_NORMAL_SUB.get()).build(null));
+    public static final Supplier<BlockEntityType<DevAdvancedSubBlockEntity>> DEV_ADVANCED_SUB = BLOCK_ENTITIES.register("dev_advanced_sub", () -> BlockEntityType.Builder.of(DevAdvancedSubBlockEntity::new, AcademyBlocks.DEV_ADVANCED_SUB.get()).build(null));
+    public static final Supplier<BlockEntityType<WindGenBaseSubBlockEntity>> WIND_GEN_BASE_SUB = BLOCK_ENTITIES.register("windgen_base_sub", () -> BlockEntityType.Builder.of(WindGenBaseSubBlockEntity::new, AcademyBlocks.WIND_GEN_BASE_SUB.get()).build(null));
+    public static final Supplier<BlockEntityType<MatrixBlockEntity>> MATRIX = BLOCK_ENTITIES.register("matrix", () -> BlockEntityType.Builder.of(MatrixBlockEntity::new, AcademyBlocks.MATRIX.get()).build(null));
+    public static final Supplier<BlockEntityType<MatrixSubBlockEntity>> MATRIX_SUB = BLOCK_ENTITIES.register("matrix_sub", () -> BlockEntityType.Builder.of(MatrixSubBlockEntity::new, AcademyBlocks.MATRIX_SUB.get()).build(null));
+    public static final Supplier<BlockEntityType<PhaseGenBlockEntity>> PHASE_GEN = BLOCK_ENTITIES.register("phase_gen", () -> BlockEntityType.Builder.of(PhaseGenBlockEntity::new, AcademyBlocks.PHASE_GEN.get()).build(null));
+    public static final Supplier<BlockEntityType<SolarGenBlockEntity>> SOLAR_GEN = BLOCK_ENTITIES.register("solar_gen", () -> BlockEntityType.Builder.of(SolarGenBlockEntity::new, AcademyBlocks.SOLAR_GEN.get()).build(null));
+    public static final Supplier<BlockEntityType<EnergyBridgeInputBlockEntity>> RF_INPUT = BLOCK_ENTITIES.register("rf_input", () -> BlockEntityType.Builder.of(EnergyBridgeInputBlockEntity::new, AcademyBlocks.RF_INPUT.get()).build(null));
+    public static final Supplier<BlockEntityType<EnergyBridgeOutputBlockEntity>> RF_OUTPUT = BLOCK_ENTITIES.register("rf_output", () -> BlockEntityType.Builder.of(EnergyBridgeOutputBlockEntity::new, AcademyBlocks.RF_OUTPUT.get()).build(null));
+    public static final Supplier<BlockEntityType<WindGenBaseBlockEntity>> WINDGEN_BASE = BLOCK_ENTITIES.register("windgen_base", () -> BlockEntityType.Builder.of(WindGenBaseBlockEntity::new, AcademyBlocks.WINDGEN_BASE.get()).build(null));
+    public static final Supplier<BlockEntityType<WindGenFanBlockEntity>> WINDGEN_FAN = BLOCK_ENTITIES.register("windgen_fan", () -> BlockEntityType.Builder.of(WindGenFanBlockEntity::new, AcademyBlocks.WINDGEN_FAN.get()).build(null));
+    public static final Supplier<BlockEntityType<WindGenMainBlockEntity>> WINDGEN_MAIN = BLOCK_ENTITIES.register("windgen_main", () -> BlockEntityType.Builder.of(WindGenMainBlockEntity::new, AcademyBlocks.WINDGEN_MAIN.get()).build(null));
+    public static final Supplier<BlockEntityType<WindGenPillarBlockEntity>> WINDGEN_PILLAR = BLOCK_ENTITIES.register("windgen_pillar", () -> BlockEntityType.Builder.of(WindGenPillarBlockEntity::new, AcademyBlocks.WINDGEN_PILLAR.get()).build(null));
+    public static final Supplier<BlockEntityType<PhaseLiquidBlockEntity>> PHASE_LIQUID = BLOCK_ENTITIES.register("phase_liquid", () -> BlockEntityType.Builder.of(PhaseLiquidBlockEntity::new, AcademyBlocks.PHASE_LIQUID.get()).build(null));
+    public static final Supplier<BlockEntityType<NodeBasicBlockEntity>> NODE_BASIC = BLOCK_ENTITIES.register("node_basic", () -> BlockEntityType.Builder.of(NodeBasicBlockEntity::new, AcademyBlocks.NODE_BASIC.get()).build(null));
+    public static final Supplier<BlockEntityType<NodeStandardBlockEntity>> NODE_STANDARD = BLOCK_ENTITIES.register("node_standard", () -> BlockEntityType.Builder.of(NodeStandardBlockEntity::new, AcademyBlocks.NODE_STANDARD.get()).build(null));
+    public static final Supplier<BlockEntityType<NodeAdvancedBlockEntity>> NODE_ADVANCED = BLOCK_ENTITIES.register("node_advanced", () -> BlockEntityType.Builder.of(NodeAdvancedBlockEntity::new, AcademyBlocks.NODE_ADVANCED.get()).build(null));
+    public static final Supplier<BlockEntityType<ImagFusorBlockEntity>> IMAG_FUSOR = BLOCK_ENTITIES.register("imag_fusor", () -> BlockEntityType.Builder.of(ImagFusorBlockEntity::new, AcademyBlocks.IMAG_FUSOR.get()).build(null));
+    public static final Supplier<BlockEntityType<MetalFomerBlockEntity>> METAL_FORMER = BLOCK_ENTITIES.register("metal_former", () -> BlockEntityType.Builder.of(MetalFomerBlockEntity::new, AcademyBlocks.METAL_FORMER.get()).build(null));
+
+}

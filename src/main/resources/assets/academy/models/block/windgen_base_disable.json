@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:obj",
+  "model": "academy:models/windgen_base_disable.obj",
+  "flip_v": true,
+  "textures": {
+    "texture0": "academy:block/windgen_base_disable",
+    "particle": "academy:block/windgen_base_disable"
+  }
+}

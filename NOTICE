@@ -1,0 +1,30 @@
+AcademyCraft 1.21.1 reconstruction notice
+===========================================
+
+This tree is a modified reconstruction initially based on MohistMC AcademyCraft
+1.21.1 commit 3826425200740447a07d86e016bb2c6548aa082d.  The fixed current-mainline
+comparison snapshot used for this release is:
+  MohistMC/AcademyCraft commit 00e9cf09fc4c52d2f9b3b3af7d4cda140a4ccf1c
+
+Reconstruction changes were made in 2026.
+
+Legacy source and behavior reference:
+  LambdaInnovation/AcademyCraft final Minecraft 1.12.2 master
+  commit 7b1401cd420bd6888a2b9d8db5cd8a69fe314bb9
+  describe 1.1.3-2-g7b1401cd; Forge 1.12.2-14.23.4.2705
+
+Legacy presentation assets were obtained from the official AcademyCraft 1.0.7
+CurseForge artifact, file 2582707, uploaded by weathfold on 2018-07-14.  This
+asset provenance is narrower than the final-1.12.2 source/behavior baseline:
+  https://www.curseforge.com/minecraft/mc-mods/academycraft/files/2582707
+  SHA-256 3A05685BD76DFECAB39B5137A38658EB1CD3D9EAC2185D0A5854EA0571060CE0
+
+An audit found 538 resource files in this reconstruction byte-identical to files
+from that artifact (491 PNG files and 47 OGG files). Other source and resource
+files include modifications and new reconstruction work and must not be inferred
+to be byte-identical merely from this notice.
+
+See LICENSE for the GPLv3 text. See README.md for the upstream project's exact
+additional non-commercial notice and retained-rights statements. This notice
+records provenance; it does not expand, narrow, reconcile, or interpret those
+terms, and is not legal advice.

@@ -1,0 +1,3 @@
+package com.mohistmc.academy.skill.ability.teleporter;import com.mohistmc.academy.config.DynamicSkillRules;import com.mohistmc.academy.skill.*;import net.minecraft.server.level.ServerPlayer;
+/** Behavior is owned by FlashingSessionManager and its directional payload. */
+public final class FlashingEffect implements SkillEffect{public String getId(){return"flashing";}public void execute(ServerPlayer p,PlayerAbilityData d){DynamicSkillRules.enabled(getId());}public boolean appliesBaseResourceCost(){return false;}public boolean grantsActivationProficiency(){return false;}public int getCooldownTicks(float e){return(int)(900-500*e);}}

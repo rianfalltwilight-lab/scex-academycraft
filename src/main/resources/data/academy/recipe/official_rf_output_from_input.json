@@ -1,0 +1,5 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [{ "item": "academy:rf_input" }],
+  "result": { "count": 1, "id": "academy:rf_output" }
+}

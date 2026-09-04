@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:obj",
+  "model": "academy:models/windgen_pillar.obj",
+  "flip_v": true,
+  "textures": {
+    "texture0": "academy:block/windgen_pillar",
+    "particle": "academy:block/windgen_pillar"
+  }
+}

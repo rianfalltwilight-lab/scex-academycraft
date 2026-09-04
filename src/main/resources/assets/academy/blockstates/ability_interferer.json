@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "status=0": {
+      "model": "academy:block/ability_interferer_off"
+    },
+    "status=1": {
+      "model": "academy:block/ability_interferer_on"
+    }
+  }
+}

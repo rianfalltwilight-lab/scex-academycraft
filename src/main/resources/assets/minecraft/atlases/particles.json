@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "type": "directory",
+      "source": "effects/formula",
+      "prefix": "effects/formula/"
+    }
+  ]
+}

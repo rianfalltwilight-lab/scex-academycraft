@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "academy:dev_normal",
+    "academy:dev_advanced",
+    "academy:dev_normal_sub",
+    "academy:dev_advanced_sub",
+    "academy:matrix",
+    "academy:matrix_sub"
+  ]
+}
