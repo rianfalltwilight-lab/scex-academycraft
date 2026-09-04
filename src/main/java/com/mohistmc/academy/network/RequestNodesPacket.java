@@ -115,7 +115,7 @@ public record RequestNodesPacket(BlockPos machinePos) implements CustomPacketPay
                             BlockPos bp = center.offset(dx, dy, dz);
                             if (!level.isLoaded(bp)) continue;
                             BlockEntity be = level.getBlockEntity(bp);
-                            if (be instanceof IWirelessNode node && level.mayInteract(player, bp)) {
+                            if (be instanceof IWirelessNode node) {
                                 double nodeRange = Math.max(0.0, Math.min(256.0, node.getRange()));
                                 if (center.distSqr(bp) <= nodeRange * nodeRange) {
                                     foundNodes.add(bp.immutable());

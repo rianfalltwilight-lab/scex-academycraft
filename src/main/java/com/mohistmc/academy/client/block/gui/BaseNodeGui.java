@@ -6,6 +6,7 @@ import com.mohistmc.academy.client.gui.InfoArea;
 import com.mohistmc.academy.network.NetworkInputLimits;
 import com.mohistmc.academy.network.NodeConfigPacket;
 import com.mohistmc.academy.utils.RenderUtils;
+import com.mohistmc.academy.world.block.entity.BaseNodeBlockEntity;
 import com.mohistmc.academy.world.menu.BaseNodeMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -22,6 +23,7 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     private final StringBuilder nodeNameInput = new StringBuilder();
     private final StringBuilder nodePasswordInput = new StringBuilder();
     private boolean nodeInputInitialized;
+    private boolean nodeNameEdited;
     private boolean passwordEdited;
     private EditFocus editFocus = EditFocus.NONE;
     private int infoPanelX = Integer.MIN_VALUE;
@@ -116,6 +118,12 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
             if (inside(mouseX, mouseY, infoPanelX + 42, panelY + Math.round(nameRowY),
                     InfoArea.W - 44, 9)) {
                 editFocus = EditFocus.NAME;
+                // The legacy property editor selected its current value.  A
+                // fresh node should therefore let the user type a real name
+                // directly instead of accidentally producing UnnamedHome.
+                if (!nodeNameEdited && BaseNodeBlockEntity.DEFAULT_NODE_NAME.contentEquals(nodeNameInput)) {
+                    nodeNameInput.setLength(0);
+                }
                 return true;
             }
             if (inside(mouseX, mouseY, infoPanelX + 42, panelY + Math.round(passwordRowY),
@@ -136,6 +144,7 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (editFocus == EditFocus.NONE) return super.keyPressed(keyCode, scanCode, modifiers);
         StringBuilder target = editFocus == EditFocus.NAME ? nodeNameInput : nodePasswordInput;
+        if (editFocus == EditFocus.NAME) nodeNameEdited = true;
         if (keyCode == 259) {
             if (!target.isEmpty()) target.deleteCharAt(target.length() - 1);
             return true;
@@ -157,6 +166,7 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
         if (editFocus == EditFocus.NONE) return super.charTyped(codePoint, modifiers);
         if (Character.isISOControl(codePoint)) return true;
         StringBuilder target = editFocus == EditFocus.NAME ? nodeNameInput : nodePasswordInput;
+        if (editFocus == EditFocus.NAME) nodeNameEdited = true;
         int max = editFocus == EditFocus.NAME
                 ? NetworkInputLimits.NODE_NAME : NetworkInputLimits.PASSWORD;
         if (target.length() < max) target.append(codePoint);
@@ -177,6 +187,19 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
                         : java.util.Optional.empty()));
         passwordEdited = false;
         nodePasswordInput.setLength(0);
+    }
+
+    /** Real-client gate hook: edit and submit through the production input handlers. */
+    public final boolean renameNodeForVisualGate(String name) {
+        if (!Boolean.getBoolean("academy.machineVisualGate") || name == null
+                || name.isBlank() || name.length() > NetworkInputLimits.NODE_NAME
+                || !menu.canEditNode() || infoPanelX == Integer.MIN_VALUE) return false;
+        if (!mouseClicked(infoPanelX + 50.0,
+                this.topPos + InfoArea.Y + Math.round(nameRowY) + 4.0, 0)
+                || editFocus != EditFocus.NAME) return false;
+        while (!nodeNameInput.isEmpty()) keyPressed(259, 0, 0);
+        for (int i = 0; i < name.length(); i++) charTyped(name.charAt(i), 0);
+        return keyPressed(257, 0, 0);
     }
 
     private String trimInfo(String value) {

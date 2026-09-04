@@ -68,12 +68,14 @@ public record ConnectToNodePacket(BlockPos machinePos, BlockPos nodePos, Optiona
                         packet.machinePos().getZ() + 0.5) > 64.0) {
                     return;
                 }
-                if (!level.mayInteract(player, packet.machinePos())
-                        || !level.mayInteract(player, packet.nodePos())) {
-                    // RequestNodesPacket applies the same policy.  This message
-                    // still matters when permissions change after discovery:
-                    // previously that race looked exactly like a dead button.
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c没有权限操作机器或无线节点"));
+                if (!level.mayInteract(player, packet.machinePos())) {
+                    // The player must control the open machine.  The remote
+                    // node itself follows the final-1.12.2 public/password
+                    // access contract; applying spawn/claim interaction again
+                    // at that coordinate made valid wireless links disappear
+                    // on protected servers even though the player never edits
+                    // the node block or inventory here.
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c没有权限操作当前机器"));
                     return;
                 }
 

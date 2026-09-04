@@ -169,6 +169,10 @@ public class SkillTreeGui extends AcademyScreen {
         return (int) Math.round(logical * guiWidth / (double) LEGACY_GUI_WIDTH);
     }
 
+    private int scaled(double logical) {
+        return (int) Math.round(logical * guiWidth / (double) LEGACY_GUI_WIDTH);
+    }
+
     @Override public void tick() {
         super.tick();
         refreshAuthoritativeEnergy();
@@ -577,37 +581,45 @@ public class SkillTreeGui extends AcademyScreen {
         }
 
         if (fromTerminal || devType == null) return;
-        int lineLeft = guiLeft + scaled(8);
+        // page_developer.xml centers these children inside parent_left
+        // (x=4,width=108.5). Preserve its half-pixel coordinates before
+        // scaling; rounding each offset independently shifted the bars and
+        // labels by up to four physical pixels at GUI scale 2.
+        int lineLeft = guiLeft + scaled(4 + (108.5 - 100) / 2);
         int lineWidth = scaled(100);
+        int barLeft = guiLeft + scaled(4 + (108.5 - 97) / 2);
         graphics.drawString(font, Component.translatable("ac.skill_tree.current_node"),
-                lineLeft, guiTop + scaled(105), 0xFFFFFFFF, false);
+                lineLeft, guiTop + scaled((187 - 12) / 2.0 + 17), 0xFFFFFFFF, false);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         graphics.setColor(.4f, .4f, .4f, .8f);
-        graphics.blit(LEGACY_LIST_BUTTON, lineLeft, guiTop + scaled(115), lineWidth, scaled(16),
+        int nodeButtonTop = guiTop + scaled((187 - 16) / 2.0 + 29);
+        graphics.blit(LEGACY_LIST_BUTTON, lineLeft, nodeButtonTop, lineWidth, scaled(16),
                 0, 0, 300, 32, 300, 32);
         graphics.setColor(1, 1, 1, 1);
         RenderSystem.disableBlend();
         int nodeIcon = scaled(12);
-        RenderUtils.render(nodeIcon, nodeIcon, lineLeft + scaled(3), guiTop + scaled(117), graphics, LEGACY_NODE_ICON);
+        RenderUtils.render(nodeIcon, nodeIcon, lineLeft + scaled(3), nodeButtonTop + scaled(2), graphics, LEGACY_NODE_ICON);
         String displayedNode = linkedNodeName.isBlank()
                 ? Component.translatable("ac.skill_tree.not_connected").getString() : linkedNodeName;
         graphics.drawString(font, font.plainSubstrByWidth(displayedNode, lineWidth - scaled(22)),
-                lineLeft + scaled(18), guiTop + scaled(119), 0xFFFFFFFF, false);
+                lineLeft + scaled(18), nodeButtonTop + scaled(4), 0xFFFFFFFF, false);
 
         graphics.drawString(font, Component.translatable("ac.skill_tree.power"),
-                lineLeft, guiTop + scaled(132), 0xFFFFFFFF, false);
-        drawLegacyBar(graphics, lineLeft, guiTop + scaled(145), scaled(97),
+                lineLeft, guiTop + scaled((187 - 12) / 2.0 + 43), 0xFFFFFFFF, false);
+        drawLegacyBar(graphics, barLeft, guiTop + scaled((187 - 8) / 2.0 + 55.5), scaled(97),
                 maxEnergy <= 0 ? 0 : energy / (double) maxEnergy, 0xFFFCC532);
         graphics.drawString(font, Component.translatable("ac.skill_tree.sync_rate"),
-                lineLeft, guiTop + scaled(155), 0xFFFFFFFF, false);
-        drawLegacyBar(graphics, lineLeft, guiTop + scaled(168), scaled(97),
+                lineLeft, guiTop + scaled((187 - 12) / 2.0 + 66), 0xFFFFFFFF, false);
+        drawLegacyBar(graphics, barLeft, guiTop + scaled((187 - 8) / 2.0 + 77.5), scaled(97),
                 devType.syncRate / 100.0, 0xFF32A4FC);
     }
 
     private void drawLegacyBar(GuiGraphics graphics, int x, int y, int width, double progress, int color) {
         int height = Math.max(2, scaled(8));
-        graphics.fill(x, y, x + width, y + height, 0x55444444);
+        // The authored parent_background_developermachine texture already
+        // contains the black track and white outline. The legacy ProgressBar
+        // draws only the colored fill on top of it.
         int filled = (int) Math.round(width * Math.clamp(progress, 0, 1));
         if (filled > 0) graphics.fill(x, y, x + filled, y + height, color);
     }

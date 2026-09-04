@@ -10,7 +10,7 @@
 
 ## 当前状态
 
-当前公开测试版为 **0.0.15**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁。
+当前公开测试版为 **0.0.16**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁。
 
 这不代表已经完成 100% 行为或视觉等价。最近一次完整独立复审对 0.0.14 的证据加权估计约为 **62%（主观区间 50%–72%）**；0.0.15 增加了旧机器所有权迁移和正式客户端门禁，仍需逐技能、双客户端、JEI 实际转移、多缩放 GUI 和长期存档测试。测试数、文件数、类名或注册数量不会被当作功能完成率。
 
@@ -23,16 +23,10 @@
 | Minecraft | 1.21.1 |
 | NeoForge | 21.1.248 |
 | Java | 21 |
-| AcademyCraft | 0.0.15 |
+| AcademyCraft | 0.0.16 |
 | JEI / Jade | 可选，不是硬前置 |
 
-从 Releases 下载 `AcademyCraft-neoforge-1.21.1-0.0.15-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。
-
-0.0.15 JAR SHA-256：
-
-```text
-5D24B7B0DB950CF7D40B9E8C70A4C112D916289E984ED01CADE4F9325601BBE6
-```
+从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。
 
 ## 构建与测试
 
@@ -94,15 +88,6 @@ silently assigned to the first visitor. A permission-level-2 administrator can u
 
 Test evidence is classified in [docs/TESTING.md](docs/TESTING.md). Static source/resource contract
 tests are regression hints and are never reported as gameplay-parity passes.
-
-Misc
-====
-
-## Donation
-
-You can support developement of AcademyCraft by donating. This will secure us more time to make the mod more intriguing!
-
-You would also be able to be in our donator list, both on website and in-game :beer:
 
 ## License
 

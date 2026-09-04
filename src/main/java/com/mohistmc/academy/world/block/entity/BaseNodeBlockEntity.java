@@ -2,6 +2,7 @@ package com.mohistmc.academy.world.block.entity;
 
 import com.mohistmc.academy.energy.api.block.IWirelessNode;
 import com.mohistmc.academy.energy.impl.WirelessSystem;
+import com.mohistmc.academy.network.NetworkInputLimits;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -29,7 +30,8 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     private double energy = 0;
     private double maxEnergy = DEFAULT_MAX_ENERGY;
     private double bandwidth = DEFAULT_BANDWIDTH;
-    private String nodeName = "Unnamed";
+    public static final String DEFAULT_NODE_NAME = "Unnamed";
+    private String nodeName = DEFAULT_NODE_NAME;
     private String password = "";
     private UUID ownerUUID = null;
     /** Client-side mirror of the runtime network membership flag. */
@@ -169,13 +171,14 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
 
     // ==================== Setters ====================
 
-    public void setNodeName(String name) {
-        if (name == null || name.length() > 64) return;
+    public boolean setNodeName(String name) {
+        if (!NetworkInputLimits.validRequired(name, NetworkInputLimits.NODE_NAME)) return false;
         this.nodeName = name;
         setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+        return true;
     }
     public void setPassword(String password) {
         if (password == null || password.length() > 64) return;
@@ -221,10 +224,25 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.loadAdditional(tag, provider);
         if (tag.contains("node_maxEnergy")) maxEnergy = boundedFinite(tag.getDouble("node_maxEnergy"), DEFAULT_MAX_ENERGY, 1_000_000_000);
+        // Final 1.12.2 used energy/nodeName/password.  Earlier rebuilt jars
+        // switched to snake_case without an importer, so an upgraded node
+        // silently reopened as Unnamed. Prefer the current schema but accept
+        // the official keys once and persist them in the current form later.
         if (tag.contains("node_energy")) energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(tag.getDouble("node_energy"), maxEnergy);
+        else if (tag.contains("energy")) energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(tag.getDouble("energy"), maxEnergy);
         if (tag.contains("node_bandwidth")) bandwidth = boundedFinite(tag.getDouble("node_bandwidth"), DEFAULT_BANDWIDTH, 1_000_000);
-        if (tag.contains("node_name")) nodeName = bounded(tag.getString("node_name"), 64);
-        if (tag.contains("node_pass")) password = bounded(tag.getString("node_pass"), 64);
+        String loadedName = tag.contains("node_name") ? tag.getString("node_name")
+                : tag.contains("nodeName") ? tag.getString("nodeName") : DEFAULT_NODE_NAME;
+        // 0.0.15 and the original tile could persist names longer than the
+        // current network field.  Loading is a migration boundary: preserve
+        // the usable prefix instead of turning the whole saved identity into
+        // Unnamed. New C2S edits remain strictly bounded and are never silently
+        // truncated.
+        loadedName = bounded(loadedName, NetworkInputLimits.NODE_NAME);
+        nodeName = NetworkInputLimits.validRequired(loadedName, NetworkInputLimits.NODE_NAME)
+                ? loadedName : DEFAULT_NODE_NAME;
+        if (tag.contains("node_pass")) password = bounded(tag.getString("node_pass"), NetworkInputLimits.PASSWORD);
+        else if (tag.contains("password")) password = bounded(tag.getString("password"), NetworkInputLimits.PASSWORD);
         if (tag.contains("ownerUUID")) ownerUUID = parseUuid(tag.getString("ownerUUID"));
         if (tag.contains("node_connected")) clientConnected = tag.getBoolean("node_connected");
     }

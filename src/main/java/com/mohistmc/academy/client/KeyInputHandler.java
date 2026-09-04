@@ -391,7 +391,12 @@ public class KeyInputHandler {
                 String skillId = data.getCurrentPreset().getSlot(i);
                 // Inactive ability delegates do not own the key in 1.0.7;
                 // mouse 1/2 must remain ordinary mining/use without chat spam.
-                if (data.isAbilityActive() && skillId != null && skill != null && data.canUseSkill(skill)) {
+                // The server owns CP, overload, cooldown and contextual
+                // preflight.  Rejecting on the client made a briefly stale
+                // sync snapshot swallow a valid key press without the server
+                // ever seeing it. Keep only presentation/dispatch routing
+                // here and let UseSkill/SkillKeyDown return the verdict.
+                if (data.isAbilityActive() && skillId != null && skill != null) {
                     if (skill.getEffect() instanceof ChargingSkillEffect) {
                         if (CHARGING_SLOTS[i] && isToggleContextSkill(CHARGING_SKILLS[i])) {
                             // These 1.0.7 delegates are toggles. Releasing the

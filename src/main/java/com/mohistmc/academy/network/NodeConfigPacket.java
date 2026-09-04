@@ -42,9 +42,15 @@ public record NodeConfigPacket(BlockPos pos, Optional<String> name, Optional<Str
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 if (!(player.containerMenu instanceof BaseNodeMenu menu)
-                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player)) return;
-                if (packet.name().filter(n -> n.length() > MAX_NAME_LENGTH).isPresent()
-                        || packet.password().filter(p -> p.length() > MAX_PASSWORD_LENGTH).isPresent()) return;
+                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player)) {
+                    player.sendSystemMessage(Component.literal("§c节点界面已失效，请重新打开"));
+                    return;
+                }
+                if (packet.name().filter(n -> !NetworkInputLimits.validRequired(n, MAX_NAME_LENGTH)).isPresent()
+                        || packet.password().filter(p -> !NetworkInputLimits.validOptional(p, MAX_PASSWORD_LENGTH)).isPresent()) {
+                    player.sendSystemMessage(Component.literal("§c节点名或密码格式无效"));
+                    return;
+                }
                 if (!player.level().isLoaded(packet.pos())
                         || player.distanceToSqr(packet.pos().getX() + 0.5, packet.pos().getY() + 0.5,
                         packet.pos().getZ() + 0.5) > 64.0
@@ -55,11 +61,7 @@ public record NodeConfigPacket(BlockPos pos, Optional<String> name, Optional<Str
                         player.sendSystemMessage(Component.translatable("message.academy.node.owner_only"));
                         return;
                     }
-                    packet.name().ifPresent(n -> {
-                        if (!n.isEmpty()) {
-                            node.setNodeName(n);
-                        }
-                    });
+                    packet.name().ifPresent(node::setNodeName);
                     packet.password().ifPresent(node::setPassword);
                     node.setChanged();
                     player.sendSystemMessage(Component.literal("§aNode config updated"));

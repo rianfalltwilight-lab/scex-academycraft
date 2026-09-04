@@ -31,8 +31,6 @@ public final class AboutAppGui extends Screen {
 
     private final boolean fromTerminal;
     private final List<String> credits = new ArrayList<>();
-    private final List<String> donation = new ArrayList<>();
-    private boolean donateTab;
     private int scroll;
     private int maxScroll;
     private int panelX;
@@ -69,7 +67,7 @@ public final class AboutAppGui extends Screen {
 
         int areaX = panelX + Math.round(53 * scale);
         tabY = panelY + Math.round(266 * scale);
-        tabWidth = Math.round(315 * scale);
+        tabWidth = Math.round(630 * scale);
         tabHeight = Math.max(12, Math.round(58 * scale));
         contentX = areaX + 5;
         contentY = tabY + tabHeight + 3;
@@ -85,12 +83,10 @@ public final class AboutAppGui extends Screen {
         RenderUtils.render(panelWidth, panelHeight, panelX, panelY, graphics, BACKGROUND);
 
         int firstTabX = panelX + Math.round(53 * panelWidth / (float) SOURCE_WIDTH);
-        drawTab(graphics, firstTabX, tabY, tabWidth, tabHeight, "Credits", !donateTab,
+        drawTab(graphics, firstTabX, tabY, tabWidth, tabHeight, "Credits", true,
                 0x552984F1);
-        drawTab(graphics, firstTabX + tabWidth, tabY, tabWidth, tabHeight, "Donate", donateTab,
-                0x55E79CFF);
 
-        List<String> lines = donateTab ? donation : credits;
+        List<String> lines = credits;
         maxScroll = Math.max(0, lines.size() * LINE_HEIGHT - contentHeight + 4);
         clampScroll();
         hoveredUrl = null;
@@ -106,7 +102,7 @@ public final class AboutAppGui extends Screen {
                 text = split > 2 ? raw.substring(2, split) : raw.substring(2);
                 url = split > 2 ? raw.substring(split + 1) : null;
                 color = 0xFF5BB4FF;
-            } else if (!donateTab && index < 2) {
+            } else if (index < 2) {
                 color = 0xFF8ECBFF;
             } else if (isCreditHeading(raw)) {
                 color = 0xFFFFFFFF;
@@ -149,17 +145,6 @@ public final class AboutAppGui extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            int firstTabX = panelX + Math.round(53 * panelWidth / (float) SOURCE_WIDTH);
-            if (inside(mouseX, mouseY, firstTabX, tabY, tabWidth, tabHeight)) {
-                donateTab = false;
-                scroll = 0;
-                return true;
-            }
-            if (inside(mouseX, mouseY, firstTabX + tabWidth, tabY, tabWidth, tabHeight)) {
-                donateTab = true;
-                scroll = 0;
-                return true;
-            }
             if (hoveredUrl != null) {
                 Minecraft minecraft = Minecraft.getInstance();
                 minecraft.keyboardHandler.setClipboard(hoveredUrl);
@@ -205,23 +190,11 @@ public final class AboutAppGui extends Screen {
     private void loadOfficialText() {
         String config = readConfig();
         if (!config.isBlank()) {
-            int donationStart = config.indexOf("donation {");
-            String creditSection = donationStart < 0 ? config : config.substring(0, donationStart);
-            credits.addAll(quotedStrings(creditSection));
-
-            String language = Minecraft.getInstance().getLanguageManager().getSelected();
-            String donationSection = donationStart < 0 ? "" : config.substring(donationStart);
-            String localized = listBody(donationSection, language);
-            if (localized.isBlank()) localized = listBody(donationSection, "en_us");
-            donation.addAll(quotedStrings(localized));
+            credits.addAll(quotedStrings(config));
         }
         if (credits.isEmpty()) {
-            credits.addAll(List.of("Presented by Lambda Innovation", "ac.li-dev.cn",
+            credits.addAll(List.of("Presented by Lambda Innovation",
                     "AcademyCraft 1.12.2", "Thank you for playing!"));
-        }
-        if (donation.isEmpty()) {
-            donation.addAll(List.of("Thank you for playing AcademyCraft!",
-                    "The historical support links are preserved for project attribution."));
         }
     }
 
@@ -236,14 +209,6 @@ public final class AboutAppGui extends Screen {
         } catch (Exception ignored) {
             return "";
         }
-    }
-
-    private static String listBody(String section, String key) {
-        int start = section.indexOf(key + ":");
-        if (start < 0) return "";
-        int open = section.indexOf('[', start);
-        int close = open < 0 ? -1 : section.indexOf(']', open);
-        return open < 0 || close < 0 ? "" : section.substring(open + 1, close);
     }
 
     private static List<String> quotedStrings(String text) {
@@ -261,7 +226,7 @@ public final class AboutAppGui extends Screen {
     private static boolean isCreditHeading(String text) {
         return switch (text) {
             case "Project Direction", "Game Design", "Programming", "Art", "QA",
-                    "Website", "Localization", "GitHub Contributors", "Donators",
+                    "Website", "Localization", "GitHub Contributors",
                     "Thank you for playing!" -> true;
             default -> false;
         };

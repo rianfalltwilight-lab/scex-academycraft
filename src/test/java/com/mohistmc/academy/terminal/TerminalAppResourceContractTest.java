@@ -20,7 +20,7 @@ class TerminalAppResourceContractTest {
     }
 
     @Test
-    void official112AboutAppAndExactBinaryResourcesAreRestored() throws Exception {
+    void official112AboutVisualsAreRestoredWithoutThirdPartySolicitationMetadata() throws Exception {
         String registry = Files.readString(Path.of(
                 "src/main/java/com/mohistmc/academy/terminal/AppRegistry.java"));
         String terminal = Files.readString(Path.of(
@@ -30,7 +30,7 @@ class TerminalAppResourceContractTest {
         assertTrue(terminal.contains("new AboutAppGui(true)"));
 
         assertSha256("build/resources/main/assets/academy/textures/guis/about/bg.png",
-                "5c0fb8473cbe3e7fe09cc1c134c68dd176ded590f3354f4209ef1aa78f9e60fd");
+                "5f1fae209d887bba05630c650f76708e3ae0a01b879477783369d2164a0e77d0");
         assertSha256("build/resources/main/assets/academy/textures/guis/about/button_glow.png",
                 "39c55f1767e164235ad0a586920199c0f5b3723c90dd68f9c7c3d329f277a1b7");
         assertSha256("build/resources/main/assets/academy/textures/guis/apps/about/icon.png",

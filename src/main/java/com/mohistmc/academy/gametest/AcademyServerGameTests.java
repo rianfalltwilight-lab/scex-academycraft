@@ -275,6 +275,36 @@ public final class AcademyServerGameTests {
     }
 
     @GameTest(template = EMPTY)
+    public static void nodeLoadsFinal112IdentityKeysAndRewritesCurrentSchema(GameTestHelper helper) {
+        BlockPos nodePos = helper.absolutePos(new BlockPos(4, 2, 4));
+        helper.getLevel().setBlock(nodePos, AcademyBlocks.NODE_BASIC.get().defaultBlockState(), 3);
+        if (!(helper.getLevel().getBlockEntity(nodePos) instanceof NodeBasicBlockEntity node)) {
+            helper.fail("Node block entity was not created"); return;
+        }
+
+        CompoundTag legacy = new CompoundTag();
+        legacy.putDouble("energy", 4321.0);
+        String longLegacyName = "Legacy Home Node Name That Was Longer";
+        String migratedName = longLegacyName.substring(0, 32);
+        legacy.putString("nodeName", longLegacyName);
+        legacy.putString("password", "legacy-pass");
+        node.loadAdditional(legacy, helper.getLevel().registryAccess());
+        if (node.getEnergy() != 4321.0
+                || !migratedName.equals(node.getNodeName())
+                || !"legacy-pass".equals(node.getPassword())) {
+            helper.fail("Final 1.12.2 node identity/energy keys did not migrate"); return;
+        }
+
+        CompoundTag rewritten = node.saveWithoutMetadata(helper.getLevel().registryAccess());
+        if (rewritten.getDouble("node_energy") != 4321.0
+                || !migratedName.equals(rewritten.getString("node_name"))
+                || !"legacy-pass".equals(rewritten.getString("node_pass"))) {
+            helper.fail("Migrated node was not rewritten in the current schema"); return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY)
     public static void destroyingAdjacentMatrixDoesNotCascade(GameTestHelper helper) {
         var level = helper.getLevel();
         BlockPos first = helper.absolutePos(new BlockPos(2, 1, 2));

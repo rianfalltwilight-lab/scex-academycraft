@@ -15,12 +15,15 @@ import com.mohistmc.academy.client.block.gui.PhaseGenGui;
 import com.mohistmc.academy.client.block.gui.SolarGenGui;
 import com.mohistmc.academy.client.block.gui.WindBaseGui;
 import com.mohistmc.academy.client.block.gui.WindMainGui;
+import com.mohistmc.academy.client.KeyInputHandler;
 import com.mohistmc.academy.client.gui.AcademyBaseUI;
 import com.mohistmc.academy.client.gui.SkillTreeGui;
 import com.mohistmc.academy.energy.api.block.IWirelessUser;
 import com.mohistmc.academy.energy.impl.WiWorldData;
+import com.mohistmc.academy.energy.impl.WirelessSystem;
 import com.mohistmc.academy.skill.AbilityCategory;
 import com.mohistmc.academy.skill.AcademyAttachments;
+import com.mohistmc.academy.skill.SkillChargingManager;
 import com.mohistmc.academy.world.AcademyBlocks;
 import com.mohistmc.academy.world.AcademyItems;
 import com.mohistmc.academy.world.block.DevMachineBase;
@@ -110,6 +113,7 @@ public final class MachineVisualGate {
         WAIT_DEVELOPER_TREE,
         CAPTURE_DEVELOPER_TREE,
         WAIT_DEVELOPER_NETWORK,
+        WAIT_DEVELOPER_NETWORK_CONNECTED,
         CAPTURE_DEVELOPER_NETWORK,
         WAIT_DEVELOPER_RETURN,
         WAIT_DEVELOPER_RESET,
@@ -132,6 +136,7 @@ public final class MachineVisualGate {
         WAIT_MATRIX_OPERATIONAL,
         CAPTURE_MATRIX_OPERATIONAL,
         WAIT_NODE,
+        WAIT_NODE_RENAMED,
         CAPTURE_NODE,
         WAIT_NODE_NETWORKS,
         WAIT_NODE_CONNECTED,
@@ -162,6 +167,14 @@ public final class MachineVisualGate {
         CAPTURE_JADE_WIND,
         WAIT_JADE_MATRIX,
         CAPTURE_JADE_MATRIX,
+        WAIT_ABILITY_SYNC,
+        WAIT_ABILITY_TOGGLE_DOWN,
+        WAIT_ABILITY_ACTIVE,
+        WAIT_ABILITY_SKILL_DOWN,
+        WAIT_ABILITY_EXECUTED,
+        WAIT_CHARGING_SYNC,
+        WAIT_CHARGING_ACTIVE,
+        WAIT_CHARGING_RELEASED,
         FINISHED
     }
 
@@ -196,6 +209,8 @@ public final class MachineVisualGate {
     private static BlockPos metalFormerPos;
     private static final List<AuxMachineFixture> AUX_MACHINES = new ArrayList<>();
     private static int auxMachineIndex;
+    private static float abilityStartCp;
+    private static float chargingStartCp;
 
     private enum AuxMachine {
         INTERFERER,
@@ -279,9 +294,19 @@ public final class MachineVisualGate {
                         }
                     });
             case WAIT_DEVELOPER_NETWORK -> {
-                if (!(mc.screen instanceof DevAdvancedGui gui) || !gui.isNetworkPanelOpenForVisualGate()) return;
-                if (stageTicks < 8) return;
-                evidence("developer network button opened authenticated slotless wireless page");
+                if (!(mc.screen instanceof DevAdvancedGui gui) || !gui.isNetworkPanelOpenForVisualGate()
+                        || gui.visibleNodesForVisualGate() < 1 || stageTicks < 8) return;
+                if (!gui.connectFirstProtectedNodeForVisualGate("gate-pass")) {
+                    throw new IllegalStateException("developer protected-node click/password/Enter path failed");
+                }
+                evidence("developer network button opened authenticated slotless wireless page and discovered nodes");
+                enter(Stage.WAIT_DEVELOPER_NETWORK_CONNECTED);
+            }
+            case WAIT_DEVELOPER_NETWORK_CONNECTED -> {
+                if (!(mc.screen instanceof DevAdvancedGui gui) || !gui.hasActiveNodeForVisualGate()) return;
+                if (!serverAssertionComplete && !operationPending) assertDeveloperNodeLink(mc);
+                if (!serverAssertionComplete || operationPending || operationFailure != null || stageTicks < 12) return;
+                evidence("advanced developer linked to the protected standalone node through the player-facing page");
                 enter(Stage.CAPTURE_DEVELOPER_NETWORK);
             }
             case CAPTURE_DEVELOPER_NETWORK -> capture(mc, "academy-gate-developer-network.png",
@@ -431,8 +456,18 @@ public final class MachineVisualGate {
             case CAPTURE_MATRIX_OPERATIONAL -> capture(mc, "academy-gate-matrix-operational.png",
                     Stage.WAIT_NODE, () -> openBlock(mc, nodePos));
             case WAIT_NODE -> {
-                if (operationPending || !(mc.screen instanceof NodeBasicGui) || stageTicks < 8) return;
-                evidence("basic node opened its registered inventory/info screen");
+                if (operationPending || !(mc.screen instanceof NodeBasicGui gui) || stageTicks < 8) return;
+                if (!gui.renameNodeForVisualGate("Gate Renamed")) {
+                    throw new IllegalStateException("basic-node production property editor rejected rename input");
+                }
+                enter(Stage.WAIT_NODE_RENAMED);
+            }
+            case WAIT_NODE_RENAMED -> {
+                if (!serverAssertionComplete && !operationPending) assertNodeRenamePersistedAndReopen(mc);
+                if (operationPending || !serverAssertionComplete
+                        || !(mc.screen instanceof NodeBasicGui gui)
+                        || !"Gate Renamed".equals(gui.getMenu().getInitialNodeName())) return;
+                evidence("node rename traversed the real editor/C2S path, persisted to NBT and survived menu reopen");
                 enter(Stage.CAPTURE_NODE);
             }
             case CAPTURE_NODE -> capture(mc, "academy-gate-node-machine.png",
@@ -646,7 +681,62 @@ public final class MachineVisualGate {
                 enter(Stage.CAPTURE_JADE_MATRIX);
             }
             case CAPTURE_JADE_MATRIX -> capture(mc, "academy-gate-jade-matrix-proxy.png",
-                    Stage.FINISHED, () -> succeed(mc));
+                    Stage.WAIT_ABILITY_SYNC, () -> prepareAbilityInputTest(mc));
+            case WAIT_ABILITY_SYNC -> {
+                if (operationPending || mc.screen != null || mc.player == null) return;
+                var data = mc.player.getData(AcademyAttachments.PLAYER_ABILITY);
+                if (data.getCurrentAbility() != AbilityCategory.ELECTROMASTER
+                        || !data.hasLearnedSkill("arc_gen")
+                        || !"arc_gen".equals(data.getSlotSkillId(0, 2))
+                        || data.isAbilityActive()) return;
+                KeyInputHandler.TOGGLE_ABILITY.setDown(true);
+                enter(Stage.WAIT_ABILITY_TOGGLE_DOWN);
+            }
+            case WAIT_ABILITY_TOGGLE_DOWN -> {
+                if (stageTicks < 3) return;
+                KeyInputHandler.TOGGLE_ABILITY.setDown(false);
+                enter(Stage.WAIT_ABILITY_ACTIVE);
+            }
+            case WAIT_ABILITY_ACTIVE -> {
+                if (mc.player == null || !mc.player.getData(AcademyAttachments.PLAYER_ABILITY)
+                        .isAbilityActive()) return;
+                KeyInputHandler.SKILL_3.setDown(true);
+                enter(Stage.WAIT_ABILITY_SKILL_DOWN);
+            }
+            case WAIT_ABILITY_SKILL_DOWN -> {
+                if (stageTicks < 3) return;
+                KeyInputHandler.SKILL_3.setDown(false);
+                enter(Stage.WAIT_ABILITY_EXECUTED);
+            }
+            case WAIT_ABILITY_EXECUTED -> {
+                if (!serverAssertionComplete && !operationPending) assertAbilityExecuted(mc);
+                if (!serverAssertionComplete || operationPending || operationFailure != null) return;
+                evidence("V activation and mapped keyboard skill traversed KeyMapping, C2S authority and ArcGen resource settlement");
+                prepareChargingInputTest(mc);
+                enter(Stage.WAIT_CHARGING_SYNC);
+            }
+            case WAIT_CHARGING_SYNC -> {
+                if (operationPending || mc.player == null) return;
+                var data = mc.player.getData(AcademyAttachments.PLAYER_ABILITY);
+                if (!data.isAbilityActive() || !data.hasLearnedSkill("charging")
+                        || !"charging".equals(data.getSlotSkillId(0, 0))) return;
+                KeyInputHandler.SKILL_1.setDown(true);
+                enter(Stage.WAIT_CHARGING_ACTIVE);
+            }
+            case WAIT_CHARGING_ACTIVE -> {
+                if (stageTicks < 8) return;
+                if (!serverAssertionComplete && !operationPending) assertChargingStarted(mc);
+                if (!serverAssertionComplete || operationPending || operationFailure != null) return;
+                KeyInputHandler.SKILL_1.setDown(false);
+                enter(Stage.WAIT_CHARGING_RELEASED);
+            }
+            case WAIT_CHARGING_RELEASED -> {
+                if (stageTicks < 5 || KeyInputHandler.isSkillHeld(0)) return;
+                if (!serverAssertionComplete && !operationPending) assertChargingReleased(mc);
+                if (!serverAssertionComplete || operationPending || operationFailure != null) return;
+                evidence("mapped legacy left-mouse skill completed the charging handshake, authoritative CP drain and key-up release");
+                succeed(mc);
+            }
             case FINISHED -> {}
         }
     }
@@ -662,7 +752,12 @@ public final class MachineVisualGate {
             normalDeveloperPos = origin.offset(-6, 0, 7).immutable();
             phasePos = origin.offset(2, 0, 0).immutable();
             phaseRapidPos = origin.offset(4, 0, 3).immutable();
-            nodePos = origin.offset(6, 0, 0).immutable();
+            // Keep the protected basic node inside its own nine-block radio
+            // radius from both developer and phase generators.  Discovery is
+            // intentionally symmetric with ConnectToNodePacket; placing this
+            // fixture twelve blocks from the developer only exercised the two
+            // unprotected higher-tier nodes and could never test authentication.
+            nodePos = origin.offset(3, 0, 0).immutable();
             matrixPos = origin.offset(11, 0, 0).immutable();
             interfererPos = origin.offset(0, 0, 8).immutable();
             standardNodePos = origin.offset(2, 0, 8).immutable();
@@ -742,6 +837,14 @@ public final class MachineVisualGate {
         assertDeveloperStructure(level, developerPos);
         if (!(level.getBlockEntity(developerPos) instanceof DevAdvancedBlockEntity developer)) {
             throw new IllegalStateException("advanced developer block entity missing");
+        }
+        // The quick-play gate deliberately reuses its world.  WiWorldData is
+        // coordinate based, so make the fixture's initial condition explicit:
+        // this screen must prove a fresh player-driven link, not inherit one
+        // left by a previous successful run at the same coordinates.
+        WirelessSystem.unlinkUser(level, developer);
+        if (WirelessSystem.getUserConnection(level, developer) != null) {
+            throw new IllegalStateException("advanced developer retained a stale wireless link");
         }
         developer.setEnergy(DevAdvancedBlockEntity.MAX_ENERGY);
     }
@@ -1269,6 +1372,115 @@ public final class MachineVisualGate {
         });
     }
 
+    private static void assertDeveloperNodeLink(Minecraft mc) {
+        operationPending = true;
+        runServerUnchecked(mc, (level, player) -> {
+            if (!(level.getBlockEntity(developerPos) instanceof DevAdvancedBlockEntity developer)
+                    || !(level.getBlockEntity(nodePos) instanceof BaseNodeBlockEntity node)) {
+                throw new IllegalStateException("developer/node disappeared before binding assertion");
+            }
+            WiWorldData data = WiWorldData.getNonCreate(level);
+            var connection = data == null ? null : data.getNodeConnection(developer);
+            if (connection == null || connection.getNode() != node) {
+                throw new IllegalStateException("advanced developer did not persist its selected node connection");
+            }
+            serverAssertionComplete = true;
+        });
+    }
+
+    private static void assertNodeRenamePersistedAndReopen(Minecraft mc) {
+        operationPending = true;
+        runServerUnchecked(mc, (level, player) -> {
+            if (!(level.getBlockEntity(nodePos) instanceof BaseNodeBlockEntity node)
+                    || !"Gate Renamed".equals(node.getNodeName())) {
+                throw new IllegalStateException("node rename packet did not update the authoritative block entity");
+            }
+            net.minecraft.nbt.CompoundTag saved = node.saveWithFullMetadata(level.registryAccess());
+            if (!"Gate Renamed".equals(saved.getString("node_name"))) {
+                throw new IllegalStateException("node rename was absent from the serialized block-entity tag");
+            }
+            interact(level, player, nodePos);
+            serverAssertionComplete = true;
+        });
+    }
+
+    private static void prepareAbilityInputTest(Minecraft mc) {
+        if (mc.player != null) mc.player.closeContainer();
+        runServer(mc, (level, player) -> {
+            player.closeContainer();
+            var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
+            data.reset();
+            data.setCurrentAbility(AbilityCategory.ELECTROMASTER);
+            data.setPlayerLevel(1);
+            data.learnSkill("arc_gen");
+            data.setCurrentPreset(0);
+            data.setSlot(0, 2, "arc_gen");
+            data.setAbilityActive(false);
+            data.recalculateMaxResources(true);
+            abilityStartCp = data.getCurrentCp();
+            data.syncTo(player);
+        });
+    }
+
+    private static void assertAbilityExecuted(Minecraft mc) {
+        operationPending = true;
+        runServerUnchecked(mc, (level, player) -> {
+            var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
+            if (!data.isAbilityActive() || data.getCurrentCp() >= abilityStartCp
+                    || !data.isOnCooldown("arc_gen")) {
+                throw new IllegalStateException("mapped ArcGen key did not execute authoritatively: active="
+                        + data.isAbilityActive() + ", cp=" + data.getCurrentCp()
+                        + "/" + abilityStartCp + ", cooldown=" + data.getCooldownTicks("arc_gen"));
+            }
+            serverAssertionComplete = true;
+        });
+    }
+
+    private static void prepareChargingInputTest(Minecraft mc) {
+        runServer(mc, (level, player) -> {
+            var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
+            data.reset();
+            data.setCurrentAbility(AbilityCategory.ELECTROMASTER);
+            data.setPlayerLevel(1);
+            data.learnSkill("charging");
+            data.setCurrentPreset(0);
+            data.setSlot(0, 0, "charging");
+            data.setAbilityActive(true);
+            data.recalculateMaxResources(true);
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            chargingStartCp = data.getCurrentCp();
+            data.syncTo(player);
+        });
+    }
+
+    private static void assertChargingStarted(Minecraft mc) {
+        operationPending = true;
+        runServerUnchecked(mc, (level, player) -> {
+            var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
+            if (!SkillChargingManager.isCharging(player.getUUID())
+                    || data.getCurrentCp() >= chargingStartCp) {
+                throw new IllegalStateException("mapped charging key did not create an authoritative session: cp="
+                        + data.getCurrentCp() + "/" + chargingStartCp + ", charging="
+                        + SkillChargingManager.isCharging(player.getUUID()));
+            }
+            serverAssertionComplete = true;
+        });
+    }
+
+    private static void assertChargingReleased(Minecraft mc) {
+        operationPending = true;
+        runServerUnchecked(mc, (level, player) -> {
+            var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
+            if (SkillChargingManager.isCharging(player.getUUID())
+                    || data.getCurrentCp() >= chargingStartCp) {
+                throw new IllegalStateException("charging key-up did not close the authoritative session: cp="
+                        + data.getCurrentCp() + "/" + chargingStartCp + ", charging="
+                        + SkillChargingManager.isCharging(player.getUUID()));
+            }
+            serverAssertionComplete = true;
+        });
+    }
+
     private static void assertMatrixMaterialsPreserved(Minecraft mc) {
         operationPending = true;
         runServerUnchecked(mc, (level, player) -> {
@@ -1387,6 +1599,7 @@ public final class MachineVisualGate {
     }
 
     private static void succeed(Minecraft mc) {
+        releaseSyntheticKeys();
         writeResult(mc, "PASS", null);
         LOGGER.info("Machine visual gate completed with {} evidence rows", EVIDENCE.size());
         stage = Stage.FINISHED;
@@ -1395,6 +1608,7 @@ public final class MachineVisualGate {
 
     private static void fail(Minecraft mc, String reason) {
         if (stage == Stage.FINISHED) return;
+        releaseSyntheticKeys();
         LOGGER.error("Machine visual gate FAILED: {}", reason);
         writeResult(mc, "FAIL", reason);
         stage = Stage.FINISHED;
@@ -1420,5 +1634,10 @@ public final class MachineVisualGate {
 
     private static String screenName(Screen screen) {
         return screen == null ? "null" : screen.getClass().getName();
+    }
+
+    private static void releaseSyntheticKeys() {
+        KeyInputHandler.TOGGLE_ABILITY.setDown(false);
+        KeyInputHandler.SKILL_3.setDown(false);
     }
 }

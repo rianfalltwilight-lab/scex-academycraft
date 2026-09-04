@@ -10,6 +10,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $projectPrefix = $projectRoot + [System.IO.Path]::DirectorySeparatorChar
+$modVersionLine = Get-Content -LiteralPath (Join-Path $projectRoot 'gradle.properties') |
+    Where-Object { $_ -match '^mod_version=' } | Select-Object -First 1
+if ($null -eq $modVersionLine) {
+    throw 'mod_version is missing from gradle.properties'
+}
+$modVersion = ($modVersionLine -split '=', 2)[1].Trim()
 $excludedTopDirectories = @(
     '.git', '.gradle', 'build', 'net', 'run', 'run-client-gate',
     'run-machine-gate', 'run-server-gate'
@@ -97,6 +103,7 @@ $sourceContractHeuristic = @($testSources | Where-Object {
 $content = @(
     'Format-Version=1'
     'Project=AcademyCraft 1.21.1 reconstruction'
+    "Mod-Version=$modVersion"
     'Minecraft-Version=1.21.1'
     'Loader=NeoForge 21.1.248'
     'MohistMC-Upstream-SHA=00e9cf09fc4c52d2f9b3b3af7d4cda140a4ccf1c'

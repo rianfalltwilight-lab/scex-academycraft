@@ -1,6 +1,7 @@
 package com.mohistmc.academy.client.gui;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ class WirelessMachineUiContractTest {
         assertTrue(ui.contains("keyPressed(257, 0, 0)"));
         assertTrue(gate.contains("connectFirstProtectedNodeForVisualGate(\"gate-pass\")"));
         assertTrue(gate.contains("node.setPassword(\"gate-pass\")"));
+        assertTrue(gate.contains("advanced developer linked to the protected standalone node"));
+        assertTrue(gate.contains("node rename traversed the real editor/C2S path"));
+        assertTrue(gate.contains("V activation and mapped keyboard skill traversed KeyMapping"));
     }
 
     @Test void regularMachineCompositionIncludesAllThreeLegacyLayers() throws Exception {
@@ -111,5 +115,16 @@ class WirelessMachineUiContractTest {
         assertTrue(world.contains("net.isInRange(x, y, z)"));
         assertTrue(packet.contains("data.isNetworkDiscoverable(targetNetwork"));
         assertTrue(!packet.contains("distance > nodeRange * nodeRange"));
+    }
+
+    @Test void remoteNodeAccessUsesTheLegacyPublicOrPasswordContract() throws Exception {
+        String discovery = source("com/mohistmc/academy/network/RequestNodesPacket.java");
+        String connect = source("com/mohistmc/academy/network/ConnectToNodePacket.java");
+        String wireless = source("com/mohistmc/academy/energy/impl/WirelessSystem.java");
+        assertFalse(discovery.contains("level.mayInteract(player, bp)"));
+        assertFalse(connect.contains("level.mayInteract(player, packet.nodePos())"));
+        assertTrue(connect.contains("level.mayInteract(player, packet.machinePos())"));
+        assertTrue(connect.contains("WirelessSystem.linkGenerator"));
+        assertTrue(wireless.contains("passwordMatches(node.getPassword(), password)"));
     }
 }

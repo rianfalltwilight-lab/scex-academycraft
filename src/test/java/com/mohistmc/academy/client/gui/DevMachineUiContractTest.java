@@ -101,4 +101,14 @@ class DevMachineUiContractTest {
         assertTrue(s.contains("textures/guis/button/button_learn.png"));
         assertTrue(s.contains("graphics.setColor(1, 1, 1, 1)"));
     }
+
+    @Test void powerAndSyncBarsUseTheExactPageDeveloperCoordinatesAndAuthoredTracks() throws Exception {
+        String s = source("com/mohistmc/academy/client/gui/SkillTreeGui.java");
+        assertTrue(s.contains("4 + (108.5 - 100) / 2"));
+        assertTrue(s.contains("4 + (108.5 - 97) / 2"));
+        assertTrue(s.contains("(187 - 8) / 2.0 + 55.5"));
+        assertTrue(s.contains("(187 - 8) / 2.0 + 77.5"));
+        assertTrue(s.contains("parent_background_developermachine texture already"));
+        assertFalse(s.contains("graphics.fill(x, y, x + width, y + height, 0xFF333333)"));
+    }
 }

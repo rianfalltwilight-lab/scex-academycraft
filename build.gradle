@@ -272,10 +272,11 @@ sourceSets.main.resources.srcDir(layout.buildDirectory.dir('generated/legacyAdva
 tasks.named('processResources').configure { dependsOn tasks.named('generateLegacyAdvancements') }
 
 // Three binary resources used by the pre-installed 1.12.2 About app were
-// absent from the Mohist tree.  Keep their exact official bytes in reviewable
-// base64 source files and decode them reproducibly for IDE runs and release
-// jars.  The two tutorial-window aliases have identical official bytes but
-// changed names during an earlier port, so expose both canonical 1.12.2 names.
+// absent from the Mohist tree. Keep the official visuals in reviewable base64
+// source files (with obsolete third-party solicitation metadata removed) and
+// decode them reproducibly for IDE runs and release jars. The two tutorial-
+// window aliases retain identical official bytes but changed names during an
+// earlier port, so expose both canonical 1.12.2 names.
 def legacy112AssetOutput = layout.buildDirectory.dir('generated/legacy112Assets')
 def legacy112EncodedAssets = [
         [source: file('src/legacyAssets/about_bg.png.b64'),
