@@ -17,7 +17,7 @@ public record ChargingAckPacket(long epoch, long generation) implements CustomPa
             ByteBufCodecs.VAR_LONG,ChargingAckPacket::epoch,ByteBufCodecs.VAR_LONG,ChargingAckPacket::generation,ChargingAckPacket::new);
     @Override public Type<? extends CustomPacketPayload> type(){return TYPE;}
     public static void handle(ChargingAckPacket packet, IPayloadContext context){context.enqueueWork(()->{
-        ServerPlayer player=(ServerPlayer)context.player();
+        if (!(context.player() instanceof ServerPlayer player) || !SkillInputSessionManager.isCurrentPlayer(player)) return;
         SkillChargingManager.ChargingState state=SkillChargingManager.getState(player.getUUID());
         if(state!=null&&state.epoch==packet.epoch()&&state.generation==packet.generation())state.acknowledged=true;
     });}

@@ -99,18 +99,28 @@ class ExtraAcCompatibilityContractTest {
     }
 
     @Test
-    void airProjectilesCannotMultiplyDamagePerRaySampleOrPassThroughBlocks() throws Exception {
+    void damagingRaysShareTheAuditedCollisionBoundary() throws Exception {
+        // This is a wiring contract only. ExtraAdversarialGameTests exercises the
+        // actual glass-pane and overlapping-box counterexamples on a real server.
         for (String path : List.of("skill/ability/aerohand/AirBladeEffect.java",
-                "skill/ability/aerohand/BomberLanceEffect.java")) {
+                "skill/ability/aerohand/BomberLanceEffect.java",
+                "skill/ability/aerohand/VolcanicBallEffect.java",
+                "skill/ability/telekinesis/PsychoNeedlingEffect.java",
+                "skill/ability/telekinesis/PsychoThrowingEffect.java",
+                "skill/ability/telekinesis/PsychoSlamEffect.java",
+                "skill/ability/telekinesis/PaperDrillEffect.java",
+                "skill/ability/telekinesis/PsychoTransmissionEffect.java")) {
             String source = read(path);
-            assertTrue(source.contains("ClipContext.Block.COLLIDER"), path);
-            assertTrue(source.contains(".stream().min("), path);
-            assertFalse(source.contains("for (Entity e :"), path);
+            assertTrue(source.contains("SkillRaycast.trace(") || source.contains("SkillRaycast.traceEntities("), path);
+            assertFalse(source.contains("getBoundingBox().inflate("), path);
         }
+        String boundary = read("skill/ability/SkillRaycast.java");
+        assertTrue(boundary.contains("ClipContext.Block.COLLIDER"));
+        assertTrue(boundary.contains("box.clip(from, end)"));
+        assertTrue(boundary.contains("Hit::distanceSquared"));
         assertTrue(read("skill/ability/aerohand/AirBladeEffect.java")
                 .contains("damageSources().magic()"));
     }
-
     @Test
     void offenseArmourRestoresItsLegacyKnockbackResistanceLifecycle() throws Exception {
         String runtime = read("skill/ability/aerohand/AeroPassiveRuntime.java");

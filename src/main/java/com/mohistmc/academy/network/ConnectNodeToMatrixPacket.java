@@ -18,12 +18,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Server-authoritative equivalent of the 1.0.7 LinkNodeEvent UI action. */
-public record ConnectNodeToMatrixPacket(BlockPos nodePos, BlockPos matrixPos,
+public record ConnectNodeToMatrixPacket(MenuActionToken actionToken, BlockPos nodePos, BlockPos matrixPos,
                                         Optional<String> password) implements CustomPacketPayload {
     private static final int MAX_PASSWORD_LENGTH = NetworkInputLimits.PASSWORD;
     public static final Type<ConnectNodeToMatrixPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "connect_node_to_matrix"));
     public static final StreamCodec<ByteBuf, ConnectNodeToMatrixPacket> STREAM_CODEC = StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, ConnectNodeToMatrixPacket::actionToken,
             BlockPos.STREAM_CODEC, ConnectNodeToMatrixPacket::nodePos,
             BlockPos.STREAM_CODEC, ConnectNodeToMatrixPacket::matrixPos,
             ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(MAX_PASSWORD_LENGTH)),
@@ -40,7 +41,7 @@ public record ConnectNodeToMatrixPacket(BlockPos nodePos, BlockPos matrixPos,
             if (!(context.player() instanceof ServerPlayer player)) return;
             ServerLevel level = player.serverLevel();
             if (!(player.containerMenu instanceof BaseNodeMenu menu)
-                    || !packet.nodePos().equals(menu.pos) || !menu.stillValid(player)
+                    || !packet.nodePos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)
                     || packet.password().filter(value -> value.length() > MAX_PASSWORD_LENGTH).isPresent()
                     || !PayloadRateLimiter.allow(player.getUUID(), "node_matrix_connect",
                     level.getGameTime(), 20, 4)

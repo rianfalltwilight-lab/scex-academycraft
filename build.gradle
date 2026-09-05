@@ -39,6 +39,8 @@ base {
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// Optional isolated run root keeps prior runtime evidence intact.
+def acceptanceRunRoot = providers.gradleProperty('acceptanceRunRoot').orNull
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
@@ -82,7 +84,7 @@ neoForge {
         // no production world or normal client configuration is mutated.
         clientMachineGate {
             client()
-            gameDirectory = project.file('run-machine-gate')
+            gameDirectory = project.file(acceptanceRunRoot == null ? 'run-machine-gate' : acceptanceRunRoot + '/userdev-machine')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'academy.machineVisualGate', 'true'
             programArguments.addAll '--quickPlaySingleplayer', 'MachineGate'
@@ -106,6 +108,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            if (acceptanceRunRoot != null) gameDirectory = project.file(acceptanceRunRoot + '/gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -150,8 +153,8 @@ neoForge {
 def machineGateSource = layout.projectDirectory.dir('run/saves/JEIGate')
 def machineGateLevelDat = layout.projectDirectory.file('run/saves/JEIGate/level.dat')
 def machineGateOptions = layout.projectDirectory.file('run/options.txt')
-def machineGateDestination = layout.projectDirectory.dir('run-machine-gate')
-def machineGateResultFile = file('run-machine-gate/academy-machine-gate-result.txt')
+def machineGateDestination = project.file(acceptanceRunRoot == null ? 'run-machine-gate' : acceptanceRunRoot + '/userdev-machine')
+def machineGateResultFile = new File(machineGateDestination, 'academy-machine-gate-result.txt')
 tasks.register('prepareMachineGateWorld', Copy) {
     from(machineGateSource) {
         into('saves/MachineGate')
@@ -352,6 +355,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
             loader_version_range   : loader_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,

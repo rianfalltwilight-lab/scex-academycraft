@@ -114,7 +114,7 @@ public class KeyInputHandler {
     private static final long[] CHARGING_GENERATIONS = new long[SKILL_KEYS.length];
     private static final boolean[] CHARGING_TOMBSTONES = new boolean[SKILL_KEYS.length];
     private static final boolean[] CANCEL_PENDING = new boolean[SKILL_KEYS.length];
-    private static long nextChargingGeneration;
+
     private static boolean screenWasOpen;
     private static boolean toggleWasDown;
     private static long togglePressedAtMillis = -1;
@@ -144,9 +144,9 @@ public class KeyInputHandler {
             CHARGING_GENERATIONS[i] = 0;
             CHARGING_TOMBSTONES[i] = false;
             CANCEL_PENDING[i] = false;
-            WAS_DOWN[i] = false;
+            WAS_DOWN[i] = SKILL_KEYS[i].isDown();
         }
-        nextChargingGeneration = 0;
+
         screenWasOpen = false;
         toggleWasDown = false;
         togglePressedAtMillis = -1;
@@ -244,6 +244,7 @@ public class KeyInputHandler {
     public static void onKeyInput(net.neoforged.neoforge.client.event.InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
+
 
         // Legacy Flashing semantics: a direction press creates a local destination marker;
         // releasing that same key asks the authoritative server to perform. A lost release
@@ -343,6 +344,7 @@ public class KeyInputHandler {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
+        SkillInputClientState.tick();
         migrateFormerDefaults(mc);
         boolean screenOpen = mc.screen != null;
         if (screenOpen) {
@@ -396,7 +398,7 @@ public class KeyInputHandler {
                 // sync snapshot swallow a valid key press without the server
                 // ever seeing it. Keep only presentation/dispatch routing
                 // here and let UseSkill/SkillKeyDown return the verdict.
-                if (data.isAbilityActive() && skillId != null && skill != null) {
+                if (data.isAbilityActive() && skillId != null && skill != null && SkillInputClientState.ready()) {
                     if (skill.getEffect() instanceof ChargingSkillEffect) {
                         if (CHARGING_SLOTS[i] && isToggleContextSkill(CHARGING_SKILLS[i])) {
                             // These 1.0.7 delegates are toggles. Releasing the
@@ -414,10 +416,11 @@ public class KeyInputHandler {
                             CHARGING_REQUEST_TICKS[i] = 0;
                             CHARGING_TOMBSTONES[i] = false;
                             if ("penetrate_teleport".equals(skillId)) penetrateDistance = penetrateMaximum(data);
-                            long generation = ++nextChargingGeneration;
-                            if (generation == 0) generation = ++nextChargingGeneration;
+                            var inputToken = SkillInputClientState.next();
+                            long generation = inputToken.sequence();
+                            
                             CHARGING_GENERATIONS[i] = generation;
-                            PacketDistributor.sendToServer(new SkillKeyDownPacket(i, generation));
+                            PacketDistributor.sendToServer(new SkillKeyDownPacket(i, inputToken));
                         }
                     } else {
                         activateOneShot(mc, i, skillId);
@@ -463,7 +466,7 @@ public class KeyInputHandler {
             PacketDistributor.sendToServer(new FlashingActionPacket(
                     flashingActive ? FlashingActionPacket.START : FlashingActionPacket.END));
         } else {
-            PacketDistributor.sendToServer(new UseSkillPacket(slot));
+            PacketDistributor.sendToServer(new UseSkillPacket(slot, SkillInputClientState.next()));
         }
     }
 

@@ -18,13 +18,14 @@ import com.mohistmc.academy.world.menu.AcademyMenu;
 /**
  * 客户端→服务端：断开机器与节点的连接。
  */
-public record DisconnectFromNodePacket(BlockPos machinePos) implements CustomPacketPayload {
+public record DisconnectFromNodePacket(MenuActionToken actionToken, BlockPos machinePos) implements CustomPacketPayload {
 
     public static final Type<DisconnectFromNodePacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "disconnect_from_node"));
 
     public static final StreamCodec<ByteBuf, DisconnectFromNodePacket> STREAM_CODEC =
             StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, DisconnectFromNodePacket::actionToken,
                     BlockPos.STREAM_CODEC, DisconnectFromNodePacket::machinePos,
                     DisconnectFromNodePacket::new
             );
@@ -39,7 +40,7 @@ public record DisconnectFromNodePacket(BlockPos machinePos) implements CustomPac
             if (context.player() instanceof ServerPlayer player) {
                 ServerLevel level = player.serverLevel();
                 if (!(player.containerMenu instanceof AcademyMenu menu)
-                        || !packet.machinePos().equals(menu.pos) || !menu.stillValid(player)) return;
+                        || !packet.machinePos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)) return;
                 if (!PayloadRateLimiter.allow(player.getUUID(), "machine_node_disconnect",
                         level.getGameTime(), 20, 8)) return;
                 if (!level.isLoaded(packet.machinePos())

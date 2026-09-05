@@ -14,6 +14,8 @@ class AcademyDamageBoundaryContractTest {
         List<String> violations=new ArrayList<>();
         try(var files=Files.walk(root)) {
             files.filter(p->p.toString().endsWith(".java"))
+                    // Runtime fixtures must call vanilla hurt to audit the real event boundary.
+                    .filter(p->!p.startsWith(root.resolve("gametest")))
                     .filter(p->!p.endsWith("AcademyDamageHelper.java"))
                     .forEach(p->{try {
                         String source=Files.readString(p).replace("AcademyDamageHelper.hurt", "");

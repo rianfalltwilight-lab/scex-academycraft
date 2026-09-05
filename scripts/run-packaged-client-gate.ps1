@@ -5,6 +5,21 @@ param(
     [string]$JavaPath = 'java',
     [string]$AssetRoot = '',
     [string]$LibraryFallbackRoot = '',
+    [ValidatePattern('^[A-Za-z0-9._-]+$')][string]$GameDirectoryName = 'game',
+    [string]$QuickPlaySingleplayer = '',
+    [string]$QuickPlayMultiplayer = '',
+    [switch]$MachineVisualGate,
+    [switch]$ExtraJeiGate,
+    [switch]$ExtraSkillVisualGate,
+    [switch]$ExtraJeiTransferGate,
+    [string]$ConcurrentRoot = '',
+    [ValidateSet('', 'a', 'b')][string]$ConcurrentRole = '',
+    [string]$RecheckSessionRoot = '',
+    [ValidateSet('', 'a', 'b')][string]$RecheckSessionRole = '',
+    [string]$RecheckSessionAddress = 'localhost:25619',
+    [switch]$RecheckSessionRestart,
+    [ValidateRange(0, 7680)][int]$Width = 0,
+    [ValidateRange(0, 4320)][int]$Height = 0,
     [switch]$Wait
 )
 
@@ -19,8 +34,14 @@ $baseId = [string]$child.inheritsFrom
 $basePath = Join-Path $instance "versions/$baseId/$baseId.json"
 $base = Get-Content -LiteralPath $basePath -Raw | ConvertFrom-Json
 $libraryRoot = Join-Path $instance 'libraries'
-$gameDirectory = Join-Path $instance 'game'
-$nativeDirectory = Join-Path $instance 'natives'
+if ($GameDirectoryName -in @('.', '..')) { throw 'GameDirectoryName must be a child directory' }
+if ($QuickPlaySingleplayer -and $QuickPlayMultiplayer) { throw 'Select only one quick-play destination' }
+$enabledGates = @($MachineVisualGate.IsPresent, $ExtraJeiGate.IsPresent,
+    $ExtraSkillVisualGate.IsPresent, $ExtraJeiTransferGate.IsPresent,
+    (-not [string]::IsNullOrWhiteSpace($ConcurrentRoot)), (-not [string]::IsNullOrWhiteSpace($RecheckSessionRoot))).Where({ $_ })
+if ($enabledGates.Count -gt 1) { throw 'Select only one automated client gate per game directory' }
+$gameDirectory = Join-Path $instance $GameDirectoryName
+$nativeDirectory = Join-Path $gameDirectory 'natives'
 New-Item -ItemType Directory -Path $gameDirectory,$nativeDirectory -Force | Out-Null
 
 $fallbackLibraryFilesByName = @{}
@@ -39,7 +60,15 @@ function Restore-VerifiedLibrary {
         [string]$Target,
         [object]$Download
     )
-    if (Test-Path -LiteralPath $Target -PathType Leaf) { return $true }
+    if (Test-Path -LiteralPath $Target -PathType Leaf) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$Download.sha1)) {
+            $actual = (Get-FileHash -Algorithm SHA1 -LiteralPath $Target).Hash
+            if ($actual -ne ([string]$Download.sha1).ToUpperInvariant()) {
+                throw "Existing library failed SHA-1 verification: $Target"
+            }
+        }
+        return $true
+    }
     $name = [System.IO.Path]::GetFileName($Target)
     if (-not $fallbackLibraryFilesByName.ContainsKey($name)) { return $false }
     foreach ($candidate in $fallbackLibraryFilesByName[$name]) {
@@ -167,6 +196,12 @@ foreach ($library in @($base.libraries)) {
     }
 }
 
+# Match Java UUID.nameUUIDFromBytes("OfflinePlayer:" + name), including UUID version/variant.
+# Distinct test players must not share the old hard-coded identity.
+$identityBytes = [Security.Cryptography.MD5]::HashData([Text.Encoding]::UTF8.GetBytes("OfflinePlayer:$PlayerName"))
+$identityBytes[6] = ($identityBytes[6] -band 0x0f) -bor 0x30
+$identityBytes[8] = ($identityBytes[8] -band 0x3f) -bor 0x80
+$offlineUuid = [Convert]::ToHexString($identityBytes).ToLowerInvariant()
 $separator = [System.IO.Path]::PathSeparator
 $variables = @{
     '${auth_player_name}' = $PlayerName
@@ -174,7 +209,7 @@ $variables = @{
     '${game_directory}' = $gameDirectory
     '${assets_root}' = $AssetRoot
     '${assets_index_name}' = [string]$base.assetIndex.id
-    '${auth_uuid}' = '7c4d45c51ea34e74a444d70d25fc44d1'
+    '${auth_uuid}' = $offlineUuid
     '${auth_access_token}' = '0'
     '${clientid}' = ''
     '${auth_xuid}' = ''
@@ -198,26 +233,51 @@ function Resolve-Variables {
 $jvmArguments = [System.Collections.Generic.List[string]]::new()
 $jvmArguments.Add('-Xms512M')
 $jvmArguments.Add('-Xmx2G')
+if ($MachineVisualGate) { $jvmArguments.Add('-Dacademy.machineVisualGate=true') }
+if ($ExtraJeiGate) { $jvmArguments.Add('-Dacademy.extraJeiGate=true') }
+if ($ExtraSkillVisualGate) { $jvmArguments.Add('-Dacademy.extraSkillVisualGate=true') }
+if ($ExtraJeiTransferGate) { $jvmArguments.Add('-Dacademy.extraJeiTransferGate=true') }
+if ($ConcurrentRoot) {
+    if (-not $ConcurrentRole -or $MachineVisualGate) { throw 'Concurrent gate requires a role and cannot use the singleplayer gate' }
+    $jvmArguments.Add('-Dacademy.concurrentMenuGate=true')
+    $jvmArguments.Add("-Dacademy.concurrentRoot=$ConcurrentRoot")
+    $jvmArguments.Add("-Dacademy.concurrentRole=$ConcurrentRole")
+}
+if ($RecheckSessionRoot) {
+    if (-not $RecheckSessionRole) { throw 'Recheck session gate requires a role' }
+    if (-not (Test-Path -LiteralPath (Join-Path $RecheckSessionRoot 'ISOLATED-ACCEPTANCE') -PathType Leaf)) { throw 'Recheck isolated marker missing' }
+    $jvmArguments.Add('-Dacademy.recheckSessionGate=true')
+    $jvmArguments.Add("-Dacademy.recheckSessionRoot=$RecheckSessionRoot")
+    $jvmArguments.Add("-Dacademy.recheckSessionRole=$RecheckSessionRole")
+    $jvmArguments.Add("-Dacademy.recheckSessionAddress=$RecheckSessionAddress")
+    if ($RecheckSessionRestart) { $jvmArguments.Add('-Dacademy.recheckSessionRestart=true') }
+} elseif ($RecheckSessionRestart -or $RecheckSessionRole) { throw 'Recheck options require RecheckSessionRoot' }
 Add-ResolvedArguments -Destination $jvmArguments -Arguments @($base.arguments.jvm)
 Add-ResolvedArguments -Destination $jvmArguments -Arguments @($child.arguments.jvm)
 $gameArguments = [System.Collections.Generic.List[string]]::new()
 Add-ResolvedArguments -Destination $gameArguments -Arguments @($base.arguments.game)
 Add-ResolvedArguments -Destination $gameArguments -Arguments @($child.arguments.game)
+if ($QuickPlaySingleplayer) { $gameArguments.Add('--quickPlaySingleplayer'); $gameArguments.Add($QuickPlaySingleplayer) }
+if ($QuickPlayMultiplayer) { $gameArguments.Add('--quickPlayMultiplayer'); $gameArguments.Add($QuickPlayMultiplayer) }
+if ($Width -gt 0) { $gameArguments.Add('--width'); $gameArguments.Add([string]$Width) }
+if ($Height -gt 0) { $gameArguments.Add('--height'); $gameArguments.Add([string]$Height) }
 
 $allArguments = [System.Collections.Generic.List[string]]::new()
 foreach ($argument in $jvmArguments) { $allArguments.Add((Resolve-Variables $argument)) }
 $allArguments.Add([string]$child.mainClass)
 foreach ($argument in $gameArguments) { $allArguments.Add((Resolve-Variables $argument)) }
-$argumentLog = Join-Path $instance 'packaged-client-arguments.txt'
+$argumentLog = Join-Path $instance "packaged-client-$GameDirectoryName-arguments.txt"
 [System.IO.File]::WriteAllLines($argumentLog, $allArguments, [System.Text.Encoding]::UTF8)
 
 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName = $JavaPath
 $startInfo.WorkingDirectory = $gameDirectory
 $startInfo.UseShellExecute = $false
+$startInfo.CreateNoWindow = $true
+$startInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
 foreach ($argument in $allArguments) { $startInfo.ArgumentList.Add($argument) }
 $process = [System.Diagnostics.Process]::Start($startInfo)
-$pidPath = Join-Path $instance 'packaged-client.pid'
+$pidPath = Join-Path $instance "packaged-client-$GameDirectoryName.pid"
 [System.IO.File]::WriteAllText($pidPath, [string]$process.Id, [System.Text.Encoding]::ASCII)
 Write-Output "Started packaged client PID $($process.Id); gameDir=$gameDirectory"
 if ($Wait) {

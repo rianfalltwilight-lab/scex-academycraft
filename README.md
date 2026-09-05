@@ -11,11 +11,11 @@
 
 ## 当前状态
 
-当前公开测试版为 **0.0.17**。它已通过 JUnit、NeoForge GameTest、正式 NeoForge 客户端加载以及专服冷启动/保存/重启门禁；本版还补入 ExtraAcC 1.12.2 登记的 25 个物品、23 个专属技能及其机器配方和动态物品状态。
+当前开发版本为 **0.0.19**，针对 0.0.18 的网络会话、伤害扣费和生命周期边界追加复核。客户端与服务端使用 v14 协议，必须同步更换。本版将防御结算移至伤害通过公开取消、盾牌和无敌帧检查后，并在最终确认死亡后清理技能。Mixin 只针对 **NeoForge 21.1.248** 验证，加载范围锁定该版本。逐项证据与限制见 [0.0.19 验收说明](docs/ACCEPTANCE-0.0.19.md)。
 
-这不代表已经完成 100% 行为或视觉等价。ExtraAcC 的登记项已经逐项盘点，但若干旧版移动实体与专属美术在 1.21.1 中采用服务端权威效果或合法的 Academy/原版资源替代；仍需双客户端压力、JEI 实际转移、多缩放 GUI 和长期存档测试。测试数、文件数、类名或注册数量不会被当作功能完成率。
+本仓库包含 ExtraAcC 行为参考的 25 个物品、23 个专属技能和 29 个配方；这些数量是盘点范围，不能当作玩法或视觉完成率。测试结果应以配套交付报告中的精确 JAR SHA-256、证据路径及已验证层级为准。本次源码修改和隔离测试不代表已经公开发布或部署生产。
 
-请先备份世界，并在非生产实例验证后再用于服务器。
+ExtraAcC 原仓库固定快照没有 LICENSE。本轮未复制其代码、模型或材质；移动实体及专属美术仍有行为和表现差异，Liquid Shadow 仍采用原版 Drowned 外观。请先备份世界并在非生产实例验证。
 
 ## 运行与安装
 
@@ -24,7 +24,7 @@
 | Minecraft | 1.21.1 |
 | NeoForge | 21.1.248 |
 | Java | 21 |
-| AcademyCraft | 0.0.17 |
+| AcademyCraft | 0.0.19 |
 | JEI / Jade | 可选，不是硬前置 |
 
 从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。
@@ -32,7 +32,8 @@
 ## 构建与测试
 
 ```powershell
-.\gradlew.bat clean build --no-daemon
+.\scripts\generate-build-info.ps1
+.\gradlew.bat build --no-daemon
 .\gradlew.bat runGameTestServer --no-daemon
 ```
 

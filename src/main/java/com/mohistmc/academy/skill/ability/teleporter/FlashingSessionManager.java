@@ -20,7 +20,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -125,7 +124,7 @@ public final class FlashingSessionManager {
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent e) { if (e.getEntity() instanceof ServerPlayer p) ACTIVE.remove(p.getUUID()); }
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent e) { if (e.getEntity() instanceof ServerPlayer p) abort(p); }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent e) { if (e.getEntity() instanceof ServerPlayer p) abort(p); }
-    @SubscribeEvent public static void death(LivingDeathEvent e) { if (e.getEntity() instanceof ServerPlayer p) abort(p); }
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) { if (entity instanceof ServerPlayer p) abort(p); }
     @SubscribeEvent public static void stopping(ServerStoppingEvent e) {
         for (UUID id : java.util.List.copyOf(ACTIVE.keySet())) {
             ServerPlayer player = e.getServer().getPlayerList().getPlayer(id);

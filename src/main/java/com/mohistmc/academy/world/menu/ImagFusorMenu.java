@@ -1,5 +1,6 @@
 package com.mohistmc.academy.world.menu;
 
+import com.mohistmc.academy.crafting.AcademyRecipeTypes;
 import com.mohistmc.academy.world.AcademyItems;
 import com.mohistmc.academy.world.AcademyMenus;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,7 +47,11 @@ public class ImagFusorMenu extends AcademyMenu {
         addAcademySlot(new Slot(container, ImagFusorBlockEntity.INPUT_SLOT, 13, 49) {
             @Override
             public boolean mayPlace(ItemStack item) {
-                return item.is(AcademyItems.CRYSTAL_LOW.get()) || item.is(AcademyItems.CRYSTAL_NORMAL.get());
+                // Accept ingredient kinds before the player has assembled the full recipe count.
+                // The machine's processing recipe remains responsible for quantity checks.
+                return inv.player.level().getRecipeManager()
+                        .getAllRecipesFor(AcademyRecipeTypes.IMAG_FUSING.get()).stream()
+                        .anyMatch(holder -> holder.value().input().test(item));
             }
         });
 

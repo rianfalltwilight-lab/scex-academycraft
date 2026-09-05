@@ -98,6 +98,14 @@ public abstract class BaseNodeMenu extends AcademyMenu {
     public int getNodeRange() { return Math.max(0, nodeData.get(7)); }
     public boolean isConnected() { return nodeData.get(8) != 0; }
     public String getInitialNodeName() { return initialNodeName; }
+
+    /** Current public block-entity mirror; the opening snapshot is only a fallback. */
+    public String getCurrentNodeName() {
+        if (pos != null && inv.player.level().getBlockEntity(pos) instanceof BaseNodeBlockEntity node) {
+            return boundedNodeName(node.getNodeName());
+        }
+        return initialNodeName;
+    }
     public String getOwnerLabel() { return ownerLabel; }
     public boolean canEditNode() { return canEditNode; }
 

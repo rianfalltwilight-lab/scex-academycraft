@@ -10,6 +10,8 @@ import com.mohistmc.academy.network.ConnectNodeToMatrixPacket;
 import com.mohistmc.academy.network.AbilityInterfererConfigPacket;
 import com.mohistmc.academy.network.AbilityInterfererStatePacket;
 import com.mohistmc.academy.network.ChargingAckPacket;
+import com.mohistmc.academy.network.SyncSkillInputSessionPacket;
+import com.mohistmc.academy.network.RequestSkillInputSessionPacket;
 import com.mohistmc.academy.network.CoinTossResultPacket;
 import com.mohistmc.academy.network.TeleporterCriticalPacket;
 import com.mohistmc.academy.network.TeleporterTrailPacket;
@@ -84,7 +86,7 @@ public class AcademyCraft {
     public static final String MODID = "academy";
     /** Strict and mandatory on both peers: NeoForge rejects any unequal protocol before play payloads. */
     /** Payload layout generation; bump whenever any play payload or synced data schema changes. */
-    public static final String NETWORK_PROTOCOL = "academy-1.21.1-payload-v12-data-v4";
+    public static final String NETWORK_PROTOCOL = "academy-1.21.1-payload-v14-data-v4";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public AcademyCraft(IEventBus modEventBus, ModContainer modContainer) {
@@ -273,6 +275,8 @@ public class AcademyCraft {
                 SkillKeyUpPacket::handle
         );
         registrar.playToServer(ChargingCancelPacket.TYPE, ChargingCancelPacket.STREAM_CODEC, ChargingCancelPacket::handle);
+        registrar.playToServer(RequestSkillInputSessionPacket.TYPE, RequestSkillInputSessionPacket.STREAM_CODEC, RequestSkillInputSessionPacket::handle);
+        registrar.playToClient(SyncSkillInputSessionPacket.TYPE, SyncSkillInputSessionPacket.STREAM_CODEC, SyncSkillInputSessionPacket::handle);
         registrar.playToServer(SwitchPresetPacket.TYPE, SwitchPresetPacket.STREAM_CODEC, SwitchPresetPacket::handle);
         registrar.playToServer(
                 ChargingAckPacket.TYPE,

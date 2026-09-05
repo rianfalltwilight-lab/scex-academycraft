@@ -18,7 +18,7 @@ import com.mohistmc.academy.world.menu.BaseNodeMenu;
 /**
  * 客户端→服务端：更新节点名称和密码。
  */
-public record NodeConfigPacket(BlockPos pos, Optional<String> name, Optional<String> password) implements CustomPacketPayload {
+public record NodeConfigPacket(MenuActionToken actionToken, BlockPos pos, Optional<String> name, Optional<String> password) implements CustomPacketPayload {
     private static final int MAX_NAME_LENGTH = 32;
     private static final int MAX_PASSWORD_LENGTH = 64;
 
@@ -27,6 +27,7 @@ public record NodeConfigPacket(BlockPos pos, Optional<String> name, Optional<Str
 
     public static final StreamCodec<ByteBuf, NodeConfigPacket> STREAM_CODEC =
             StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, NodeConfigPacket::actionToken,
                     BlockPos.STREAM_CODEC, NodeConfigPacket::pos,
                     ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(MAX_NAME_LENGTH)), NodeConfigPacket::name,
                     ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(MAX_PASSWORD_LENGTH)), NodeConfigPacket::password,
@@ -42,7 +43,7 @@ public record NodeConfigPacket(BlockPos pos, Optional<String> name, Optional<Str
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 if (!(player.containerMenu instanceof BaseNodeMenu menu)
-                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player)) {
+                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)) {
                     player.sendSystemMessage(Component.literal("§c节点界面已失效，请重新打开"));
                     return;
                 }

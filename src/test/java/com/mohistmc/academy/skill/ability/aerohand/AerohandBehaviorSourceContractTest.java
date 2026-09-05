@@ -68,7 +68,7 @@ class AerohandBehaviorSourceContractTest {
     @Test
     void allFourPassivesHaveServerAuthoritativeDamageAndTickBoundaries() throws Exception {
         String runtime = source("skill/ability/aerohand/AeroPassiveRuntime.java");
-        assertTrue(runtime.contains("LivingIncomingDamageEvent"));
+        assertTrue(runtime.contains("AcceptedAbilityDamage"));
         assertTrue(runtime.contains("DamageTypes.FALL"));
         assertTrue(runtime.contains("DamageTypes.IN_WALL"));
         assertTrue(runtime.contains("DamageTypes.DROWN"));

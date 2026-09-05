@@ -1,6 +1,7 @@
 package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.AbilityCategory;
 import com.mohistmc.academy.skill.ChargingSkillEffect;
@@ -16,9 +17,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /** Held paper drill: consumes one stack once, then follows the server-authoritative look ray. */
@@ -100,26 +98,22 @@ public final class PaperDrillEffect implements ChargingSkillEffect {
         Vec3 intended = from.add(player.getLookAngle().normalize()
                 .scale(TelekinesisRules.paperDrillRange(proficiency)));
         ServerLevel level = player.serverLevel();
-        var blockHit = level.clip(new ClipContext(from, intended,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        Vec3 to = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
+        var trace = SkillRaycast.trace(player, from, intended);
+        Vec3 to = trace.end();
 
         if ((ticks & 1) == 0) renderDrill(level, from, to);
         if (ticks % TelekinesisRules.PAPER_DRILL_PULSE_INTERVAL == 0) {
             float damage = DynamicSkillRules.damage(getId(),
                     TelekinesisRules.paperDrillDamage(proficiency));
-            AABB search = new AABB(from, to).inflate(0.8);
             int hits = 0;
-            for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
-                    target -> target != player && target.isAlive() && !player.isAlliedTo(target)
-                            && target.getBoundingBox().inflate(0.65).clip(from, to).isPresent())) {
-                if (!AcademyDamageHelper.allowsTarget(target)) continue;
+            for (var hit : trace.hits()) {
+                LivingEntity target = hit.entity();
                 if (!DynamicSkillRules.tryPay(data, getId(), 100F * target.getBbHeight(), 0)) {
                     ACTIVE.remove(player.getUUID());
                     givePaper(player);
                     return false;
                 }
-                // The drill's five-tick pulse is intentional; vanilla's ten-tick hurt window
+                // The drill's configured pulse is intentional; vanilla's ten-tick hurt window
                 // would otherwise silently discard every other continuous-damage pulse.
                 target.invulnerableTime = 0;
                 if (AcademyDamageHelper.hurt(player, target,

@@ -1,20 +1,16 @@
 package com.mohistmc.academy.skill.ability.aerohand;
 
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 
 import com.mohistmc.academy.world.effect.EffectHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
-import com.mohistmc.academy.skill.SkillEffect;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import java.util.Comparator;
 
 import static com.mohistmc.academy.utils.MathUtils.lerpf;
 
@@ -40,15 +36,9 @@ public class AirBladeEffect implements com.mohistmc.academy.skill.ability.Dynami
         Vec3 eyePos = player.getEyePosition();
         Vec3 lookVec = player.getLookAngle().normalize();
         Vec3 intended = eyePos.add(lookVec.scale(range));
-        var blockHit = level.clip(new ClipContext(eyePos, intended, ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE, player));
-        Vec3 end = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
-        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, new AABB(eyePos, end).inflate(1.25),
-                        living -> living != player && living.isAlive() && !player.isAlliedTo(living)
-                                && com.mohistmc.academy.skill.AcademyDamageHelper.allowsTarget(living)
-                                && living.getBoundingBox().inflate(1.0).clip(eyePos, end).isPresent())
-                .stream().min(Comparator.comparingDouble(living -> living.distanceToSqr(player))).orElse(null);
-        Vec3 impact = target == null ? end : target.getBoundingBox().getCenter();
+        var trace = SkillRaycast.trace(player, eyePos, intended);
+        LivingEntity target = trace.firstEntity();
+        Vec3 impact = trace.firstImpact();
         double travelled = eyePos.distanceTo(impact);
         for (double d = 0.5; d <= travelled; d += 0.5) {
             Vec3 point = eyePos.add(lookVec.scale(d));

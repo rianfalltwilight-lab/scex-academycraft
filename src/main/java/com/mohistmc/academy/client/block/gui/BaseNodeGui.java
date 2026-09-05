@@ -144,14 +144,14 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (editFocus == EditFocus.NONE) return super.keyPressed(keyCode, scanCode, modifiers);
         StringBuilder target = editFocus == EditFocus.NAME ? nodeNameInput : nodePasswordInput;
-        if (editFocus == EditFocus.NAME) nodeNameEdited = true;
         if (keyCode == 259) {
+            if (editFocus == EditFocus.NAME) nodeNameEdited = true;
             if (!target.isEmpty()) target.deleteCharAt(target.length() - 1);
             return true;
         }
         if (keyCode == 257 || keyCode == 335) {
-            submitNodeConfig();
-            editFocus = EditFocus.NONE;
+            // Preserve the edit while the per-open session is still synchronizing.
+            if (submitNodeConfig()) editFocus = EditFocus.NONE;
             return true;
         }
         if (keyCode == 256) {
@@ -174,24 +174,49 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     }
 
     private void initializeNodeInput() {
-        if (nodeInputInitialized) return;
-        nodeNameInput.append(menu.getInitialNodeName());
-        nodeInputInitialized = true;
+        if (!nodeInputInitialized) {
+            nodeNameInput.append(menu.getInitialNodeName());
+            nodeInputInitialized = true;
+        }
+        // Other viewers can rename this node while this screen stays open.
+        // Keep an in-progress or unfocused unsent draft, including before the
+        // action nonce is ready; only an untouched display follows the mirror.
+        if (!nodeNameEdited && editFocus != EditFocus.NAME) {
+            String current = menu.getCurrentNodeName();
+            if (!current.contentEquals(nodeNameInput)) {
+                nodeNameInput.setLength(0);
+                nodeNameInput.append(current);
+            }
+        }
     }
 
-    private void submitNodeConfig() {
-        if (!menu.canEditNode() || menu.pos == null || nodeNameInput.isEmpty()) return;
-        PacketDistributor.sendToServer(new NodeConfigPacket(menu.pos,
-                java.util.Optional.of(nodeNameInput.toString()),
-                passwordEdited ? java.util.Optional.of(nodePasswordInput.toString())
-                        : java.util.Optional.empty()));
-        passwordEdited = false;
-        nodePasswordInput.setLength(0);
+    private boolean submitNodeConfig() {
+        if (!menu.actionSessionReady() || !menu.canEditNode() || menu.pos == null) return false;
+        boolean nameEdit = editFocus == EditFocus.NAME;
+        if (nameEdit && !NetworkInputLimits.validRequired(nodeNameInput.toString(), NetworkInputLimits.NODE_NAME)) {
+            return false;
+        }
+        // Commit only the property the viewer confirms. A password edit from
+        // another open menu must not overwrite a newer name with its opening snapshot.
+        PacketDistributor.sendToServer(new NodeConfigPacket(menu.nextActionToken(), menu.pos,
+                nameEdit ? java.util.Optional.of(nodeNameInput.toString()) : java.util.Optional.empty(),
+                nameEdit ? java.util.Optional.empty() : java.util.Optional.of(nodePasswordInput.toString())));
+        if (nameEdit) {
+            nodeNameEdited = false;
+        } else {
+            passwordEdited = false;
+            nodePasswordInput.setLength(0);
+        }
+        return true;
     }
-
     /** Real-client gate hook: edit and submit through the production input handlers. */
     public final boolean renameNodeForVisualGate(String name) {
-        if (!Boolean.getBoolean("academy.machineVisualGate") || name == null
+        return draftNodeNameForVisualGate(name) && keyPressed(257, 0, 0);
+    }
+
+    /** Leaves an actual unsent name draft so concurrent UI gates can test focus changes. */
+    public final boolean draftNodeNameForVisualGate(String name) {
+        if (!visualGateEnabled() || !menu.actionSessionReady() || name == null
                 || name.isBlank() || name.length() > NetworkInputLimits.NODE_NAME
                 || !menu.canEditNode() || infoPanelX == Integer.MIN_VALUE) return false;
         if (!mouseClicked(infoPanelX + 50.0,
@@ -199,9 +224,31 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
                 || editFocus != EditFocus.NAME) return false;
         while (!nodeNameInput.isEmpty()) keyPressed(259, 0, 0);
         for (int i = 0; i < name.length(); i++) charTyped(name.charAt(i), 0);
+        return true;
+    }
+
+    /** Uses the same hit box, editing and Enter path as a player in the two-client gate. */
+    public final boolean setPasswordForVisualGate(String password) {
+        if (!visualGateEnabled() || !menu.actionSessionReady() || password == null
+                || password.length() > NetworkInputLimits.PASSWORD || !menu.canEditNode()
+                || infoPanelX == Integer.MIN_VALUE) return false;
+        if (!mouseClicked(infoPanelX + 50.0,
+                this.topPos + InfoArea.Y + Math.round(passwordRowY) + 4.0, 0)
+                || editFocus != EditFocus.PASSWORD) return false;
+        while (!nodePasswordInput.isEmpty()) keyPressed(259, 0, 0);
+        for (int i = 0; i < password.length(); i++) charTyped(password.charAt(i), 0);
         return keyPressed(257, 0, 0);
     }
 
+    /** Full untrimmed value last rendered by the production property editor. */
+    public final String displayedNodeNameForVisualGate() {
+        return visualGateEnabled() ? nodeNameInput.toString() : null;
+    }
+
+    private static boolean visualGateEnabled() {
+        return Boolean.getBoolean("academy.machineVisualGate")
+                || Boolean.getBoolean("academy.concurrentMenuGate");
+    }
     private String trimInfo(String value) {
         return this.font.plainSubstrByWidth(value == null ? "" : value, 58);
     }

@@ -7,14 +7,17 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.Unbreakable;
 
 public class EnergyUnit extends AcademyItem implements IEnergyItem {
 
     public static final int MAX_ENERGY = 10000;
 
     public EnergyUnit() {
-        super(new Properties().durability(MAX_ENERGY)
-                .component(DataComponents.DAMAGE, MAX_ENERGY));
+        // Keep legacy DAMAGE energy readable while excluding vanilla repair and Mending.
+        super(new Properties().durability(MAX_ENERGY).setNoRepair()
+                .component(DataComponents.DAMAGE, MAX_ENERGY)
+                .component(DataComponents.UNBREAKABLE, new Unbreakable(false)));
     }
 
     @Override

@@ -23,7 +23,7 @@ public record ChargingCancelPacket(int slotIndex, String skillId, long epoch) im
 
     public static void handle(ChargingCancelPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) return;
+            if (!(context.player() instanceof ServerPlayer player) || !SkillInputSessionManager.isCurrentPlayer(player)) return;
             SkillChargingManager.ChargingState state = SkillChargingManager.getState(player.getUUID());
             if (!SkillChargingManager.matches(state, packet.slotIndex(), packet.skillId(), packet.epoch())) return;
             SkillChargingManager.finalizeCharging(player, state, SkillChargingManager.FinalResult.ABORTED);

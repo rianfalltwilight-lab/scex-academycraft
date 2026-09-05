@@ -1,12 +1,12 @@
 package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
 import com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect;
 import com.mohistmc.academy.world.AcademyItems;
 import com.mohistmc.academy.world.effect.EffectHelper;
-import java.util.Comparator;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -15,9 +15,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /** Throws one cobblestone projectile; etched stone is faster, stronger and cheaper. */
@@ -69,15 +66,9 @@ public final class PsychoThrowingEffect implements DynamicOneShotSkillEffect {
         Vec3 from = player.getEyePosition();
         Vec3 direction = player.getLookAngle().normalize();
         Vec3 intended = from.add(direction.scale(etched ? 40 : 32));
-        var blockHit = level.clip(new ClipContext(from, intended, ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE, player));
-        Vec3 to = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
-        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, new AABB(from, to).inflate(0.7),
-                        entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
-                                && AcademyDamageHelper.allowsTarget(entity)
-                                && entity.getBoundingBox().inflate(0.45).clip(from, to).isPresent())
-                .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(player))).orElse(null);
-        Vec3 impact = target == null ? to : target.getBoundingBox().getCenter();
+        var trace = SkillRaycast.trace(player, from, intended);
+        LivingEntity target = trace.firstEntity();
+        Vec3 impact = trace.firstImpact();
         float damage = (12 + 4 * p) * (etched ? 1.25F : 1.0F);
         if (target != null && AcademyDamageHelper.hurt(player, target,
                 player.damageSources().playerAttack(player), DynamicSkillRules.damage("psycho_throwing", damage))) {

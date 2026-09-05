@@ -32,8 +32,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.mohistmc.academy.skill.AcceptedAbilityDamage;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -241,8 +240,8 @@ public final class PassiveSkillEventHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void damage(LivingIncomingDamageEvent event) {
+    /** Invoked at the accepted-hit boundary before armour reductions. */
+    public static void damage(AcceptedAbilityDamage event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || REFLECTING_DAMAGE.get()) return;
         PlayerAbilityData data = data(player);
         float amount = event.getAmount();
@@ -310,9 +309,8 @@ public final class PassiveSkillEventHandler {
         stop(event.getEntity());
     }
 
-    @SubscribeEvent
-    public static void death(LivingDeathEvent event) {
-        stop(event.getEntity());
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) {
+        stop(entity);
     }
 
     @SubscribeEvent

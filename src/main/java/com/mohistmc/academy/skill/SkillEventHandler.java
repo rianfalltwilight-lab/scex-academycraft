@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -143,9 +142,8 @@ public class SkillEventHandler {
         DevLearningSessionManager.clear(event.getEntity().getUUID());
     }
 
-    @SubscribeEvent
-    public static void onPlayerDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) {
             cancelChargingAndNotify(player);
             LocationTeleportActionPacket.forgetPlayer(player.getUUID());
             DevLearningSessionManager.clear(player.getUUID());

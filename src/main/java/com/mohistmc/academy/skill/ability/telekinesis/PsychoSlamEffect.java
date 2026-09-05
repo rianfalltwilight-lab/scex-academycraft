@@ -2,11 +2,11 @@ package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
 import com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect;
 import com.mohistmc.academy.world.effect.EffectHelper;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -17,10 +17,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -76,14 +73,7 @@ public final class PsychoSlamEffect implements DynamicOneShotSkillEffect {
     private static LivingEntity findTarget(ServerPlayer player, float p) {
         Vec3 from = player.getEyePosition();
         Vec3 intended = from.add(player.getLookAngle().normalize().scale(4 + 4 * Math.clamp(p, 0, 1)));
-        var block = player.serverLevel().clip(new ClipContext(from, intended, ClipContext.Block.COLLIDER,
-                ClipContext.Fluid.NONE, player));
-        Vec3 to = block.getType() == HitResult.Type.BLOCK ? block.getLocation() : intended;
-        return player.serverLevel().getEntitiesOfClass(LivingEntity.class, new AABB(from, to).inflate(0.75),
-                        entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
-                                && AcademyDamageHelper.allowsTarget(entity)
-                                && entity.getBoundingBox().inflate(0.45).clip(from, to).isPresent())
-                .stream().min(Comparator.comparingDouble(entity -> entity.distanceToSqr(player))).orElse(null);
+        return SkillRaycast.trace(player, from, intended).firstEntity();
     }
 
     @SubscribeEvent

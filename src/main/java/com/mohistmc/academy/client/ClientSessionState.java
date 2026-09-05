@@ -12,6 +12,7 @@ public final class ClientSessionState {
 
     /** Idempotent and strictly local: safe after the connection has already closed. */
     public static void reset() {
+        SkillInputClientState.clear();
         KeyInputHandler.resetClientSession();
         ChargingHudOverlay.resetClientSession();
         com.mohistmc.academy.client.sound.AbilityLoopSoundManager.resetClientSession();

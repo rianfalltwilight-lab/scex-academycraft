@@ -85,7 +85,28 @@ class LegacyMachineScreenLayoutContractTest {
         assertTrue(ui.contains("NetworkInputLimits.PASSWORD"));
         assertTrue(ui.contains("\"*\".repeat(inputPass.length())"));
         String node = source("com/mohistmc/academy/client/block/gui/BaseNodeGui.java");
-        assertTrue(node.contains("passwordEdited ? java.util.Optional.of(nodePasswordInput.toString())"));
+        // A password-only edit must not resend an unrelated name from this
+        // viewer's opening snapshot. Both fields retain explicit empty optionals.
+        assertTrue(node.contains("nameEdit ? java.util.Optional.of(nodeNameInput.toString()) : java.util.Optional.empty()"));
+        assertTrue(node.contains("nameEdit ? java.util.Optional.empty() : java.util.Optional.of(nodePasswordInput.toString())"));
+        assertTrue(node.contains("if (!menu.actionSessionReady() || !menu.canEditNode() || menu.pos == null) return false;"));
+        // Enter before the nonce arrives must leave focus and draft intact;
+        // only a successfully submitted property ends editing.
+        assertTrue(node.contains("if (submitNodeConfig()) editFocus = EditFocus.NONE;"));
+        assertFalse(node.contains("submitNodeConfig();\n            editFocus = EditFocus.NONE;"));
+        assertTrue(ui.contains("if ((keyCode == 257 || keyCode == 335) && !menu.actionSessionReady()) return true;"));
+    }
+
+    @Test void nodeNamesRefreshFromThePublicMirrorWithoutReplacingUnsubmittedDrafts() throws Exception {
+        String gui = source("com/mohistmc/academy/client/block/gui/BaseNodeGui.java");
+        String menu = source("com/mohistmc/academy/world/menu/BaseNodeMenu.java");
+        assertTrue(menu.contains("return boundedNodeName(node.getNodeName());"));
+        assertTrue(gui.contains("String current = menu.getCurrentNodeName();"));
+        assertTrue(gui.contains("if (!nodeNameEdited && editFocus != EditFocus.NAME)"));
+        assertFalse(gui.contains("if (nodeInputInitialized) return;"));
+        assertTrue(gui.contains("if (nameEdit) {\n            nodeNameEdited = false;\n        } else {\n            passwordEdited = false;\n            nodePasswordInput.setLength(0);\n        }"));
+        assertFalse(gui.contains("nodeNameEdited = false;\n        passwordEdited = false;"));
+        assertTrue(gui.contains("if (submitNodeConfig()) editFocus = EditFocus.NONE;"));
     }
 
     @Test void matrixControlsLiveInASeparateSynchronizedPanelWithoutABlankWirelessPage() throws Exception {

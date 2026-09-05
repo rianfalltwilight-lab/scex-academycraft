@@ -26,7 +26,7 @@ import com.mohistmc.academy.world.menu.AcademyMenu;
 /**
  * 客户端→服务端：连接机器到指定节点。
  */
-public record ConnectToNodePacket(BlockPos machinePos, BlockPos nodePos, Optional<String> password) implements CustomPacketPayload {
+public record ConnectToNodePacket(MenuActionToken actionToken, BlockPos machinePos, BlockPos nodePos, Optional<String> password) implements CustomPacketPayload {
 
     private record Attempt(int failures, long retryAt) {}
     private record AttemptKey(UUID player, BlockPos node) {}
@@ -39,6 +39,7 @@ public record ConnectToNodePacket(BlockPos machinePos, BlockPos nodePos, Optiona
 
     public static final StreamCodec<ByteBuf, ConnectToNodePacket> STREAM_CODEC =
             StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, ConnectToNodePacket::actionToken,
                     BlockPos.STREAM_CODEC, ConnectToNodePacket::machinePos,
                     BlockPos.STREAM_CODEC, ConnectToNodePacket::nodePos,
                     ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(MAX_PASSWORD_LENGTH)), ConnectToNodePacket::password,
@@ -55,7 +56,7 @@ public record ConnectToNodePacket(BlockPos machinePos, BlockPos nodePos, Optiona
             if (context.player() instanceof ServerPlayer player) {
                 ServerLevel level = player.serverLevel();
                 if (!(player.containerMenu instanceof AcademyMenu menu)
-                        || !packet.machinePos().equals(menu.pos) || !menu.stillValid(player)) return;
+                        || !packet.machinePos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)) return;
                 if (packet.password().isPresent() && packet.password().get().length() > MAX_PASSWORD_LENGTH) return;
                 if (!PayloadRateLimiter.allow(player.getUUID(), "machine_node_connect",
                         level.getGameTime(), 20, 8)) return;

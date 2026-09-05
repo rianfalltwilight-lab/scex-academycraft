@@ -111,7 +111,7 @@ public final class VecDefenseGameTests {
         float attackerHealth = attacker.getHealth();
         DamageContainer container = new DamageContainer(
                 helper.getLevel().damageSources().mobAttack(attacker), 10);
-        LivingIncomingDamageEvent event = new LivingIncomingDamageEvent(reflector, container);
+        com.mohistmc.academy.skill.AcceptedAbilityDamage event = new com.mohistmc.academy.skill.AcceptedAbilityDamage(reflector, container.getSource(), container.getNewDamage());
         PassiveSkillEventHandler.damage(event);
 
         if (event.getAmount() != 0 || !event.isCanceled()) {

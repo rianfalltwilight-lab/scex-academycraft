@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.mohistmc.academy.skill.AcceptedAbilityDamage;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /** Server-owned behaviour for ExtraAcC-compatible armour sets. */
@@ -24,10 +24,10 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 public final class ExtraEquipmentHandler {
     private ExtraEquipmentHandler() {}
 
-    @SubscribeEvent
-    public static void incomingDamage(LivingIncomingDamageEvent event) {
+    /** Energy mitigation commits only at the accepted-hit boundary, before vanilla armour. */
+    public static void incomingDamage(AcceptedAbilityDamage event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || event.getAmount() <= 0) return;
-        boolean abilityDamage = AcademyDamageHelper.isAbilityDamageInProgress();
+        boolean abilityDamage = AcademyDamageHelper.isAbilityDamageInProgress(player, event.getSource());
         List<ItemStack> imaginary = new ArrayList<>();
         float resonanceCoverage = 0;
         float imaginaryCoverage = 0;

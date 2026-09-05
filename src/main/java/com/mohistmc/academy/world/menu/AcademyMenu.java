@@ -33,7 +33,34 @@ public abstract class AcademyMenu extends AbstractContainerMenu {
     /** 翻页时是否禁用槽位交互(机器页=0 激活,无线页=1 禁用) */
     private boolean slotsActive = true;
     private final BlockEntity boundEntity;
+    private com.mohistmc.academy.network.MenuActionToken.Session actionSession;
 
+    /** UUIDs travel as eight signed-short container data words plus a ready marker. */
+    private void initializeActionSession() {
+        actionSession = inv.player.level().isClientSide()
+                ? new com.mohistmc.academy.network.MenuActionToken.Session()
+                : new com.mohistmc.academy.network.MenuActionToken.Session(java.util.UUID.randomUUID());
+        addDataSlots(new net.minecraft.world.inventory.ContainerData() {
+            @Override public int get(int index) { return actionSession.word(index); }
+            @Override public void set(int index, int value) { actionSession.receiveWord(index, value); }
+            @Override public int getCount() {
+                return com.mohistmc.academy.network.MenuActionToken.Session.WORD_COUNT;
+            }
+        });
+    }
+
+    public boolean actionSessionReady() { return actionSession.ready(); }
+    public com.mohistmc.academy.network.MenuActionToken nextActionToken() {
+        return actionSession.next(containerId);
+    }
+
+    /** Each viewer has its own stream. Closing/reopening, death, dimension
+     * changes and replacing the block invalidate that viewer's authority. */
+    public boolean acceptAction(com.mohistmc.academy.network.MenuActionToken token,
+                                net.minecraft.server.level.ServerPlayer player) {
+        return player == inv.player && player.containerMenu == this && player.isAlive()
+                && stillValid(player) && actionSession.accept(token, containerId);
+    }
     public AcademyMenu(MenuType<?> menuType, int windowId, Inventory inv, FriendlyByteBuf data, boolean hasInventory) {
         super(menuType, windowId);
         this.inv = inv;
@@ -52,6 +79,7 @@ public abstract class AcademyMenu extends AbstractContainerMenu {
             }
         }
         container.reloadItems();
+        initializeActionSession();
     }
 
     /** 返回方块位置(与 Return 框架的 getPos 一致) */

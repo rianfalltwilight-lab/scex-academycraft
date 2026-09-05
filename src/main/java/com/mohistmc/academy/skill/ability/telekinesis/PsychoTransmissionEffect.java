@@ -2,13 +2,13 @@ package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 import com.mohistmc.academy.skill.AbilityCategory;
 import com.mohistmc.academy.skill.AbilityInterferenceService;
 import com.mohistmc.academy.skill.AcademyAttachments;
 import com.mohistmc.academy.skill.PlayerAbilityData;
 import com.mohistmc.academy.skill.SkillEffect;
 import com.mohistmc.academy.world.effect.EffectHelper;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,14 +20,10 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -114,16 +110,11 @@ public final class PsychoTransmissionEffect implements SkillEffect {
         Vec3 from = player.getEyePosition();
         Vec3 intended = from.add(player.getLookAngle().normalize()
                 .scale(TelekinesisRules.psychoTransmissionRange(proficiency)));
-        var blockHit = player.serverLevel().clip(new ClipContext(from, intended,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        Vec3 to = blockHit.getType() == HitResult.Type.BLOCK ? blockHit.getLocation() : intended;
         UUID playerId = player.getUUID();
-        return player.serverLevel().getEntitiesOfClass(ItemEntity.class, new AABB(from, to).inflate(1), item ->
-                        item.isAlive() && !item.getItem().isEmpty()
-                                && (item.getTarget() == null || playerId.equals(item.getTarget()))
-                                && item.getBoundingBox().inflate(0.35).clip(from, to).isPresent()
-                                && hasInventorySpace(player, item.getItem()))
-                .stream().min(Comparator.comparingDouble(item -> item.distanceToSqr(player))).orElse(null);
+        return SkillRaycast.traceEntities(player, ItemEntity.class, from, intended, item ->
+                !item.getItem().isEmpty() && !item.hasPickUpDelay()
+                        && (item.getTarget() == null || playerId.equals(item.getTarget()))
+                        && hasInventorySpace(player, item.getItem())).firstEntity();
     }
 
     private static boolean hasInventorySpace(ServerPlayer player, ItemStack incoming) {
@@ -145,7 +136,7 @@ public final class PsychoTransmissionEffect implements SkillEffect {
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) { clear(event.getEntity()); }
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { clear(event.getEntity()); }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { clear(event.getEntity()); }
-    @SubscribeEvent public static void death(LivingDeathEvent event) { clear(event.getEntity()); }
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) { clear(entity); }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { SESSIONS.clear(); }
     @Override public int getCooldownTicks(float proficiency) { return 20; }
 }

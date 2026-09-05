@@ -196,8 +196,7 @@ public final class MeltdownerParityGameTests {
         LightShieldEffect effect = new LightShieldEffect();
         effect.onChargingStart(player, data);
         effect.onChargingTick(player, data, 1);
-        LivingIncomingDamageEvent fall = new LivingIncomingDamageEvent(player,
-                new DamageContainer(helper.getLevel().damageSources().fall(), 10));
+        com.mohistmc.academy.skill.AcceptedAbilityDamage fall = new com.mohistmc.academy.skill.AcceptedAbilityDamage(player, helper.getLevel().damageSources().fall(), 10);
         LightShieldEffect.damage(fall);
         if (fall.getAmount() != 0 || !fall.isCanceled()) {
             helper.fail("Light Shield lost the final 1.12.2 fall-damage fix");
@@ -212,8 +211,7 @@ public final class MeltdownerParityGameTests {
         }
         attacker.setPos(player.getX(), player.getY(), player.getZ() - 2);
         helper.getLevel().addFreshEntity(attacker);
-        LivingIncomingDamageEvent rear = new LivingIncomingDamageEvent(player,
-                new DamageContainer(helper.getLevel().damageSources().mobAttack(attacker), 10));
+        com.mohistmc.academy.skill.AcceptedAbilityDamage rear = new com.mohistmc.academy.skill.AcceptedAbilityDamage(player, helper.getLevel().damageSources().mobAttack(attacker), 10);
         LightShieldEffect.damage(rear);
         if (rear.getAmount() != 10 || rear.isCanceled()) {
             helper.fail("Light Shield incorrectly absorbed a rear direct attack");
@@ -221,8 +219,7 @@ public final class MeltdownerParityGameTests {
         }
 
         attacker.setPos(player.getX(), player.getY(), player.getZ() + 2);
-        LivingIncomingDamageEvent front = new LivingIncomingDamageEvent(player,
-                new DamageContainer(helper.getLevel().damageSources().mobAttack(attacker), 10));
+        com.mohistmc.academy.skill.AcceptedAbilityDamage front = new com.mohistmc.academy.skill.AcceptedAbilityDamage(player, helper.getLevel().damageSources().mobAttack(attacker), 10);
         LightShieldEffect.damage(front);
         effect.onChargingRelease(player, data, 20);
         if (front.getAmount() != 0 || !front.isCanceled()) {

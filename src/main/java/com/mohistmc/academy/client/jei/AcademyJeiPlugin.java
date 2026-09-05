@@ -56,6 +56,12 @@ public final class AcademyJeiPlugin implements IModPlugin {
         }
     };
 
+    @Override public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
+        if (Boolean.getBoolean("academy.extraJeiGate")) {
+            var gate = new ExtraJeiVisualGate(runtime);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(gate::tick);
+        }
+    }
     @Override public ResourceLocation getPluginUid() {
         return ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "jei_plugin");
     }
@@ -65,9 +71,18 @@ public final class AcademyJeiPlugin implements IModPlugin {
         // one UID and reports both entries as duplicates during real startup.
         r.registerSubtypeInterpreter(AcademyItems.ENERGY_UNIT.get(), ENERGY_SUBTYPE);
         r.registerSubtypeInterpreter(AcademyItems.DEVELOPER_PORTABLE.get(), ENERGY_SUBTYPE);
+        // Extra energy tools and armor expose the same two creative variants.
+        // Each needs presentation subtypes while recipes remain charge agnostic.
+        for (var entry : AcademyItems.ITEMS.getEntries()) {
+            var item = entry.get();
+            if (item instanceof com.mohistmc.academy.capability.IEnergyItem
+                    && item != AcademyItems.ENERGY_UNIT.get() && item != AcademyItems.DEVELOPER_PORTABLE.get()) {
+                r.registerSubtypeInterpreter(item, ENERGY_SUBTYPE);
+            }
+        }
     }
     private static String energyState(ItemStack stack) {
-        return stack.getDamageValue() >= stack.getMaxDamage() ? "empty" : "charged";
+        return ((com.mohistmc.academy.capability.IEnergyItem) stack.getItem()).getEnergyStored(stack) <= 0 ? "empty" : "charged";
     }
     @Override public void registerCategories(IRecipeCategoryRegistration r) {
         var gui = r.getJeiHelpers().getGuiHelper();

@@ -39,10 +39,11 @@ public record SkillKeyUpPacket(int slotIndex, String skillId, long epoch, float 
 
     public static void handle(SkillKeyUpPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
+            if (!(context.player() instanceof ServerPlayer player) || !SkillInputSessionManager.isCurrentPlayer(player)) return;
             PlayerAbilityData data = player.getData(AcademyAttachments.PLAYER_ABILITY);
 
             SkillChargingManager.ChargingState state = SkillChargingManager.getState(player.getUUID());
+            if (!SkillChargingManager.matches(state,packet.slotIndex(),packet.skillId(),packet.epoch())) return;
             if (AbilityInterferenceService.isInterfered(player)) {
                 if (state != null) {
                     SkillChargingManager.finalizeCharging(player, state, SkillChargingManager.FinalResult.ABORTED);
@@ -53,7 +54,7 @@ public record SkillKeyUpPacket(int slotIndex, String skillId, long epoch, float 
                 AbilityInterferenceService.notifyBlocked(player);
                 return;
             }
-            if (!SkillChargingManager.matches(state,packet.slotIndex(),packet.skillId(),packet.epoch())) return;
+
 
             state.releasing = true; // 标记正在释放，防止 onPlayerTick 重复进入
 

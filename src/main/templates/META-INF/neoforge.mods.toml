@@ -11,7 +11,7 @@ description='''AcademyCraft for NeoForge 1.21.1'''
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="[${neo_version},)"
+versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
@@ -28,3 +28,6 @@ type="optional"
 versionRange="[19.44.0.405,)"
 ordering="AFTER"
 side="CLIENT"
+
+[[mixins]]
+config="academy.mixins.json"

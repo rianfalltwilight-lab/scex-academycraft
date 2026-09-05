@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.Unbreakable;
 
 /** Shared bounded IF storage used by the ExtraAcC-compatible tools. */
 public class ExtraEnergyItem extends AcademyItem implements IEnergyItem {
@@ -22,7 +23,11 @@ public class ExtraEnergyItem extends AcademyItem implements IEnergyItem {
         // 1.12.2 IFItemManager read a missing energy tag as zero.  The 1.21
         // durability bridge therefore has to default to maximum damage;
         // otherwise every crafted device would materialise fully charged.
-        super(properties.durability(capacity).component(DataComponents.DAMAGE, capacity));
+        // DAMAGE remains the saved IF format, but vanilla repair and Mending
+        // must never interpret it as equipment wear. Hide this internal marker.
+        super(properties.durability(capacity).setNoRepair()
+                .component(DataComponents.DAMAGE, capacity)
+                .component(DataComponents.UNBREAKABLE, new Unbreakable(false)));
         this.capacity = capacity;
         this.transferLimit = Math.max(1, transferLimit);
     }

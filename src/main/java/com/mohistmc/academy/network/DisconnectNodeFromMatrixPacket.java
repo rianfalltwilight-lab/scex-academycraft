@@ -16,11 +16,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Disconnects only the open node from its current Matrix network. */
-public record DisconnectNodeFromMatrixPacket(BlockPos nodePos) implements CustomPacketPayload {
+public record DisconnectNodeFromMatrixPacket(MenuActionToken actionToken, BlockPos nodePos) implements CustomPacketPayload {
     public static final Type<DisconnectNodeFromMatrixPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "disconnect_node_from_matrix"));
     public static final StreamCodec<ByteBuf, DisconnectNodeFromMatrixPacket> STREAM_CODEC =
-            StreamCodec.composite(BlockPos.STREAM_CODEC, DisconnectNodeFromMatrixPacket::nodePos,
+            StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, DisconnectNodeFromMatrixPacket::actionToken,BlockPos.STREAM_CODEC, DisconnectNodeFromMatrixPacket::nodePos,
                     DisconnectNodeFromMatrixPacket::new);
 
     @Override
@@ -33,7 +34,7 @@ public record DisconnectNodeFromMatrixPacket(BlockPos nodePos) implements Custom
             if (!(context.player() instanceof ServerPlayer player)) return;
             ServerLevel level = player.serverLevel();
             if (!(player.containerMenu instanceof BaseNodeMenu menu)
-                    || !packet.nodePos().equals(menu.pos) || !menu.stillValid(player)
+                    || !packet.nodePos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)
                     || !PayloadRateLimiter.allow(player.getUUID(), "node_matrix_disconnect",
                     level.getGameTime(), 20, 4)
                     || !level.isLoaded(packet.nodePos())

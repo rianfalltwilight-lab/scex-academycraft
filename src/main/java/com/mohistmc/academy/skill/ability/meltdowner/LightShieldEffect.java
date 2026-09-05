@@ -21,12 +21,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.mohistmc.academy.skill.AcceptedAbilityDamage;
 
 /** Server-authoritative final 1.12.2 shield surface; the entity is visual-only. */
-@EventBusSubscriber(modid = AcademyCraft.MODID)
 public final class LightShieldEffect implements ChargingSkillEffect {
     private static final int ACTION_INTERVAL = 18;
 
@@ -177,8 +174,8 @@ public final class LightShieldEffect implements ChargingSkillEffect {
         return player.getData(AcademyAttachments.PLAYER_ABILITY);
     }
 
-    @SubscribeEvent
-    public static void damage(LivingIncomingDamageEvent event) {
+    /** Accept only hits which passed public vetoes, shield and hurt cooldown. */
+    public static void damage(AcceptedAbilityDamage event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         State state = ACTIVE.get(player.getUUID());
         if (state == null || event.getAmount() <= 0

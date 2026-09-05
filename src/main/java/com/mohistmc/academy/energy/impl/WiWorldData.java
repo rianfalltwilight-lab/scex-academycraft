@@ -290,7 +290,8 @@ public class WiWorldData extends SavedData {
         }
         nToRemove.clear();
 
-        for (NodeConn conn : nodeList) {
+        // A provider callback may create a connection while this tick runs.
+        for (NodeConn conn : new ArrayList<>(nodeList)) {
             if (conn.isDisposed()) {
                 nToRemove.add(conn);
             } else {

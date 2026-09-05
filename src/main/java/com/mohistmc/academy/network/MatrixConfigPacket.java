@@ -16,11 +16,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Owner-only mutation of an initialized Matrix SSID and password. */
-public record MatrixConfigPacket(BlockPos matrixPos, Optional<String> ssid,
+public record MatrixConfigPacket(MenuActionToken actionToken, BlockPos matrixPos, Optional<String> ssid,
                                  Optional<String> password) implements CustomPacketPayload {
     public static final Type<MatrixConfigPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "matrix_config"));
     public static final StreamCodec<ByteBuf, MatrixConfigPacket> STREAM_CODEC = StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, MatrixConfigPacket::actionToken,
             BlockPos.STREAM_CODEC, MatrixConfigPacket::matrixPos,
             ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(NetworkInputLimits.SSID)), MatrixConfigPacket::ssid,
             ByteBufCodecs.optional(ByteBufCodecs.stringUtf8(NetworkInputLimits.PASSWORD)), MatrixConfigPacket::password,
@@ -36,7 +37,7 @@ public record MatrixConfigPacket(BlockPos matrixPos, Optional<String> ssid,
             if (!(context.player() instanceof ServerPlayer player)) return;
             ServerLevel level = player.serverLevel();
             if (!(player.containerMenu instanceof MatrixMenu menu)
-                    || !packet.matrixPos().equals(menu.pos) || !menu.stillValid(player)
+                    || !packet.matrixPos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)
                     || packet.ssid().filter(value -> !NetworkInputLimits.validRequired(
                     value, NetworkInputLimits.SSID)).isPresent()
                     || packet.password().filter(value -> value.length() > NetworkInputLimits.PASSWORD).isPresent()

@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.Unbreakable;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -25,8 +26,10 @@ public class DeveloperPortable extends AcademyItem implements IEnergyItem {
     public static final int MAX_ENERGY = 10000;
 
     public DeveloperPortable() {
-        super(new Properties().durability(MAX_ENERGY)
-                .component(DataComponents.DAMAGE, MAX_ENERGY));
+        // Keep legacy DAMAGE energy readable while excluding vanilla repair and Mending.
+        super(new Properties().durability(MAX_ENERGY).setNoRepair()
+                .component(DataComponents.DAMAGE, MAX_ENERGY)
+                .component(DataComponents.UNBREAKABLE, new Unbreakable(false)));
     }
 
     @Override

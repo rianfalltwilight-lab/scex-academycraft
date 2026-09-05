@@ -2,6 +2,7 @@ package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.config.DynamicSkillRules;
+import com.mohistmc.academy.skill.ability.SkillRaycast;
 import com.mohistmc.academy.skill.AbilityCategory;
 import com.mohistmc.academy.skill.AbilityMutationService;
 import com.mohistmc.academy.skill.AcademyAttachments;
@@ -16,12 +17,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -31,11 +29,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.mohistmc.academy.skill.AcceptedAbilityDamage;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -45,7 +43,9 @@ public final class TelekinesisPassiveHandler {
     private static final String SHADOW_TAG = "academy_liquid_shadow";
     private static final String OWNER_PREFIX = "academy_liquid_shadow_owner_";
     private static final Map<UUID, Anchor> HARDENED = new HashMap<>();
-    private static final Map<UUID, UUID> SHADOWS = new HashMap<>();
+    private static final Map<UUID, ShadowSession> SHADOWS = new HashMap<>();
+
+    private record ShadowSession(ServerPlayer owner, LiquidShadowEntity shadow) {}
 
     private record Anchor(ResourceKey<Level> dimension, Vec3 position) {}
     private TelekinesisPassiveHandler() {}
@@ -54,7 +54,7 @@ public final class TelekinesisPassiveHandler {
         return player.isAlive() && !AbilityInterferenceService.isInterfered(player)
                 && data.isAbilityActive()
                 && data.getCurrentAbility() == AbilityCategory.TELEKINESIS
-                && data.hasLearnedSkill(id);
+                && data.hasLearnedSkill(id) && DynamicSkillRules.enabled(id);
     }
 
     /** Called exclusively by AcademyDamageHelper, so ordinary melee/environment damage is not mislabeled. */
@@ -123,8 +123,8 @@ public final class TelekinesisPassiveHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void incomingDamage(LivingIncomingDamageEvent event) {
+    /** Invoked only after the complete public damage-veto, shield and iframe stages. */
+    public static void incomingDamage(AcceptedAbilityDamage event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || event.getAmount() <= 0) return;
         PlayerAbilityData data = player.getData(AcademyAttachments.PLAYER_ABILITY);
         if (event.getSource().is(net.minecraft.world.damagesource.DamageTypes.LIGHTNING_BOLT)
@@ -195,18 +195,16 @@ public final class TelekinesisPassiveHandler {
         if (!passive(player, data, "liquid_shadow")) return false;
         Drowned existing = resolveShadow(player);
         if (existing != null) {
-            existing.discard();
-            SHADOWS.remove(player.getUUID());
-            if (!data.isDevMode()) data.setCooldown("liquid_shadow", 100);
+            stopShadow(player, data, true);
             return true;
         }
         if (!hasWaterBucket(player)) return false;
         float p = data.getProficiency("liquid_shadow");
-        if (!DynamicSkillRules.tryPay(data, "liquid_shadow",
-                2000F - 1000F * p, 300F - 100F * p)) return false;
+        float startCp = 2000F - 1000F * p;
+        float startOverload = 300F - 100F * p;
+        if (!DynamicSkillRules.canPay(data, "liquid_shadow", startCp, startOverload)) return false;
         ServerLevel level = player.serverLevel();
-        Drowned shadow = EntityType.DROWNED.create(level);
-        if (shadow == null) return false;
+        LiquidShadowEntity shadow = new LiquidShadowEntity(level, player.getUUID());
         Vec3 spawn = shadowTarget(player);
         shadow.setPos(spawn.x, spawn.y, spawn.z);
         shadow.setNoAi(true);
@@ -222,8 +220,16 @@ public final class TelekinesisPassiveHandler {
         var maxHealth = shadow.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth != null) maxHealth.setBaseValue(100.0);
         shadow.setHealth(100.0F);
-        if (!level.addFreshEntity(shadow)) return false;
-        SHADOWS.put(player.getUUID(), shadow.getUUID());
+        ShadowSession session = new ShadowSession(player, shadow);
+        SHADOWS.put(player.getUUID(), session);
+        // Entity insertion can be vetoed by another mod. Commit resources only after acceptance;
+        // if a callback changes the owner's resources, remove the uncommitted follower.
+        if (!level.addFreshEntity(shadow) || !shadow.isAlive()
+                || !DynamicSkillRules.tryPay(data, "liquid_shadow", startCp, startOverload)) {
+            SHADOWS.remove(player.getUUID(), session);
+            shadow.discard();
+            return false;
+        }
         if (!player.getAbilities().instabuild) {
             consumeWaterBucket(player);
         }
@@ -252,20 +258,32 @@ public final class TelekinesisPassiveHandler {
                 ? player.getLastHurtByMob() : null;
         Vec3 target = victim == null ? shadowTarget(player) : victim.position();
         Vec3 delta = target.subtract(shadow.position());
-        if (delta.lengthSqr() > 64) {
-            shadow.setPos(target.x, target.y, target.z);
+        boolean catchingUp = delta.lengthSqr() > 64;
+        if (catchingUp) {
+            // Catch up to the owner, never teleport straight onto an attack target.
+            Vec3 follow = shadowTarget(player);
+            shadow.setPos(follow.x, follow.y, follow.z);
             shadow.setDeltaMovement(Vec3.ZERO);
         } else {
             shadow.setDeltaMovement(delta.scale(0.22));
             shadow.hurtMarked = true;
         }
-        if (victim != null && shadow.distanceToSqr(victim) <= 4 && player.tickCount % 20 == 0) {
-            float damage = 20F + 10F * data.getProficiency("liquid_shadow");
-            if (com.mohistmc.academy.skill.AcademyDamageHelper.hurt(player, victim,
-                    player.damageSources().playerAttack(player), damage)) {
-                if (!data.isDevMode()) data.tryConsumeDynamic(5F * damage, 0);
-                AbilityMutationService.addSkillExp(player, data, "liquid_shadow", damage * 0.0001F);
+        if (!catchingUp && victim != null && shadow.distanceToSqr(victim) <= 4
+                && player.tickCount % 20 == 0 && SkillRaycast.hasClearPath(shadow, victim)) {
+            float rawDamage = 20F + 10F * data.getProficiency("liquid_shadow");
+            float attackCp = 5F * rawDamage;
+            // Reserve the entire attack cost before raising any damage callbacks.
+            if (!DynamicSkillRules.tryPay(data, "liquid_shadow", attackCp, 0)) {
+                stopShadow(player, data, true);
+                return;
             }
+            if (com.mohistmc.academy.skill.AcademyDamageHelper.hurt(player, victim,
+                    player.damageSources().playerAttack(player),
+                    DynamicSkillRules.damage("liquid_shadow", rawDamage))) {
+                AbilityMutationService.addSkillExp(player, data, "liquid_shadow", rawDamage * 0.0001F);
+            }
+            // A paid attempt remains paid if a protection hook rejects damage. Refunding only
+            // CP would retain usage growth and let invulnerable targets train resources for free.
         }
         shadow.setRemainingFireTicks(0);
         if (player.tickCount % 2 == 0) {
@@ -278,23 +296,26 @@ public final class TelekinesisPassiveHandler {
 
     private static boolean validShadowVictim(ServerPlayer player, Drowned shadow, LivingEntity victim) {
         return victim != null && victim != player && victim != shadow && victim.isAlive()
+                && victim.level() == shadow.level() && shadow.level() == player.level()
                 && !player.isAlliedTo(victim) && player.distanceToSqr(victim) <= 64
                 && com.mohistmc.academy.skill.AcademyDamageHelper.allowsTarget(victim);
     }
 
+    static boolean isCurrentShadow(LiquidShadowEntity shadow) {
+        ShadowSession session = SHADOWS.get(shadow.abilityOwner());
+        return session != null && session.shadow() == shadow && session.owner().isAlive()
+                && !session.owner().isRemoved() && session.owner().level() == shadow.level();
+    }
+
     private static Drowned resolveShadow(ServerPlayer player) {
-        UUID id = SHADOWS.get(player.getUUID());
-        Entity entity = id == null ? null : player.serverLevel().getEntity(id);
-        if (entity instanceof Drowned drowned && drowned.isAlive()) return drowned;
-        String ownerTag = ownerTag(player.getUUID());
-        Drowned recovered = player.serverLevel().getEntitiesOfClass(Drowned.class,
-                        player.getBoundingBox().inflate(128), candidate -> candidate.isAlive()
-                                && candidate.getTags().contains(SHADOW_TAG)
-                                && candidate.getTags().contains(ownerTag))
-                .stream().findFirst().orElse(null);
-        if (recovered == null) SHADOWS.remove(player.getUUID());
-        else SHADOWS.put(player.getUUID(), recovered.getUUID());
-        return recovered;
+        ShadowSession session = SHADOWS.get(player.getUUID());
+        if (session == null) return null;
+        LiquidShadowEntity shadow = session.shadow();
+        if (session.owner() == player && shadow.isAlive() && !shadow.isRemoved()
+                && shadow.level() == player.level()) return shadow;
+        SHADOWS.remove(player.getUUID(), session);
+        shadow.discard();
+        return null;
     }
 
     private static Vec3 shadowTarget(ServerPlayer player) {
@@ -319,57 +340,72 @@ public final class TelekinesisPassiveHandler {
     }
 
     private static void stopShadow(ServerPlayer player, PlayerAbilityData data, boolean cooldown) {
-        Drowned shadow = resolveShadow(player);
-        if (shadow != null) shadow.discard();
-        SHADOWS.remove(player.getUUID());
+        ShadowSession session = SHADOWS.remove(player.getUUID());
+        if (session == null) return;
+        session.shadow().discard();
         if (cooldown && !data.isDevMode()) data.setCooldown("liquid_shadow", 100);
     }
 
     private static void clearPlayer(Entity entity) {
         HARDENED.remove(entity.getUUID());
-        UUID shadowId = SHADOWS.remove(entity.getUUID());
-        if (shadowId != null && entity.level() instanceof ServerLevel level) {
-            Entity shadow = level.getEntity(shadowId);
-            if (shadow != null) shadow.discard();
+        ShadowSession session = SHADOWS.remove(entity.getUUID());
+        // A direct session reference still identifies the old-dimension entity after transfer.
+        if (session != null) session.shadow().discard();
+    }
+
+    private static UUID legacyShadowOwner(Entity entity) {
+        if (!(entity instanceof Drowned drowned) || !drowned.isNoAi()
+                || !entity.getTags().contains(SHADOW_TAG)) return null;
+        UUID owner = null;
+        for (String tag : entity.getTags()) {
+            if (!tag.startsWith(OWNER_PREFIX)) continue;
+            try {
+                String suffix = tag.substring(OWNER_PREFIX.length());
+                UUID parsed = UUID.fromString(suffix);
+                if (!parsed.toString().equals(suffix) || owner != null) return null;
+                owner = parsed;
+            } catch (IllegalArgumentException ignored) { return null; }
+        }
+        return owner;
+    }
+
+    /** Retire old saved no-AI shadows; ordinary Drowned entities do not match this migration. */
+    @SubscribeEvent public static void join(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.loadedFromDisk()
+                && legacyShadowOwner(event.getEntity()) != null) {
+            // This event can precede chunk promotion to FULL. Do not query/load the world here.
+            event.setCanceled(true);
         }
     }
 
-    @SubscribeEvent public static void drops(LivingDropsEvent event) {
-        if (event.getEntity().getTags().contains(SHADOW_TAG)) event.setCanceled(true);
+    @SubscribeEvent public static void leave(EntityLeaveLevelEvent event) {
+        if (!(event.getEntity() instanceof LiquidShadowEntity shadow)) return;
+        ShadowSession session = SHADOWS.get(shadow.abilityOwner());
+        if (session == null || session.shadow() != shadow) return;
+        SHADOWS.remove(shadow.abilityOwner(), session);
+        var data = session.owner().getData(AcademyAttachments.PLAYER_ABILITY);
+        if (!data.isDevMode()) data.setCooldown("liquid_shadow", 100);
     }
-    @SubscribeEvent public static void death(LivingDeathEvent event) {
-        Entity entity = event.getEntity();
-        if (entity.getTags().contains(SHADOW_TAG)) {
-            UUID ownerId = SHADOWS.entrySet().stream()
-                    .filter(entry -> entry.getValue().equals(entity.getUUID()))
-                    .map(Map.Entry::getKey).findFirst().orElse(null);
-            if (ownerId != null && entity.level() instanceof ServerLevel level) {
-                ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
-                if (owner != null) {
-                    PlayerAbilityData data = owner.getData(AcademyAttachments.PLAYER_ABILITY);
-                    if (!data.isDevMode()) data.setCooldown("liquid_shadow", 100);
-                }
-                SHADOWS.remove(ownerId);
-            } else {
-                SHADOWS.values().removeIf(entity.getUUID()::equals);
+
+    @SubscribeEvent public static void drops(LivingDropsEvent event) {
+        if (event.getEntity() instanceof LiquidShadowEntity) event.setCanceled(true);
+    }
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof LiquidShadowEntity shadow) {
+            ShadowSession session = SHADOWS.get(shadow.abilityOwner());
+            if (session != null && session.shadow() == shadow) {
+                SHADOWS.remove(shadow.abilityOwner(), session);
+                var data = session.owner().getData(AcademyAttachments.PLAYER_ABILITY);
+                if (!data.isDevMode()) data.setCooldown("liquid_shadow", 100);
             }
         } else if (entity instanceof ServerPlayer) clearPlayer(entity);
     }
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) { clearPlayer(event.getEntity()); }
-    @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        HARDENED.remove(event.getEntity().getUUID());
-        UUID shadowId = SHADOWS.remove(event.getEntity().getUUID());
-        if (shadowId != null && event.getEntity() instanceof ServerPlayer player) {
-            ServerLevel oldLevel = player.server.getLevel(event.getFrom());
-            if (oldLevel != null) {
-                Entity shadow = oldLevel.getEntity(shadowId);
-                if (shadow != null) shadow.discard();
-            }
-        }
-    }
+    @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { clearPlayer(event.getEntity()); }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { clearPlayer(event.getEntity()); }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) {
         HARDENED.clear();
+        // Level teardown owns entity removal; forget the bounded owner sessions.
         SHADOWS.clear();
     }
 }

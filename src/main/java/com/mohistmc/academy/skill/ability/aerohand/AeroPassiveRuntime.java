@@ -24,8 +24,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.mohistmc.academy.skill.AcceptedAbilityDamage;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -58,7 +57,7 @@ public final class AeroPassiveRuntime {
         return player.isAlive() && !AbilityInterferenceService.isInterfered(player)
                 && data.isAbilityActive()
                 && data.getCurrentAbility() == AbilityCategory.AEROHAND
-                && data.hasLearnedSkill(skillId);
+                && data.hasLearnedSkill(skillId) && DynamicSkillRules.enabled(skillId);
     }
 
     public static boolean isOffenseArmourEngaged(ServerPlayer player) {
@@ -111,12 +110,18 @@ public final class AeroPassiveRuntime {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         PlayerAbilityData data = data(player);
 
-        if (!player.isAlive() || !data.isAbilityActive()
+        if (!player.isAlive() || !data.isAbilityActive() || AbilityInterferenceService.isInterfered(player)
                 || data.getCurrentAbility() != AbilityCategory.AEROHAND) {
             stopArmour(player, data, false);
             stopFlying(player, data, false);
             return;
         }
+        // Invalid passives must destroy their paid context, not merely hide its effects.
+        // Otherwise interference or unlearning can restore flight/armour without a new cast.
+        if (ACTIVE_ARMOUR.contains(player.getUUID()) && !passive(player, data, OFFENSE_ARMOUR))
+            stopArmour(player, data, false);
+        if (ACTIVE_FLYING.contains(player.getUUID()) && !passive(player, data, FLYING))
+            stopFlying(player, data, false);
         if (player.tickCount % 20 == 0 && player.getAirSupply() < player.getMaxAirSupply()
                 && passive(player, data, AIRFLOW) && data.getProficiency(AIRFLOW) >= 0.5F
                 && DynamicSkillRules.tryPay(data, AIRFLOW, 50F, 0)) {
@@ -200,8 +205,8 @@ public final class AeroPassiveRuntime {
         }
     }
 
-    @SubscribeEvent
-    public static void incomingDamage(LivingIncomingDamageEvent event) {
+    /** Invoked only after the complete public damage-veto, shield and iframe stages. */
+    public static void incomingDamage(AcceptedAbilityDamage event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || event.getAmount() <= 0) return;
         PlayerAbilityData data = data(player);
         float original = event.getAmount();
@@ -304,7 +309,7 @@ public final class AeroPassiveRuntime {
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) { clearPlayer(event.getEntity()); }
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { clearPlayer(event.getEntity()); }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { clearPlayer(event.getEntity()); }
-    @SubscribeEvent public static void death(LivingDeathEvent event) { clearPlayer(event.getEntity()); }
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) { clearPlayer(entity); }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) {
         ACTIVE_ARMOUR.clear();
         ACTIVE_FLYING.clear();

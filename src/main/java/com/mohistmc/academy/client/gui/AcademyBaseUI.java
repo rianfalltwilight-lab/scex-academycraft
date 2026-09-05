@@ -860,10 +860,11 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
 
     /** WIFI 面板点击处理 */
     private void handleWifiClick(double mouseX, double mouseY) {
+        if (!menu.actionSessionReady()) return;
         // 断开当前连接
         if (this.isHoveringButton(this.leftPos + (160 / 2) * 2 - 16, this.topPos + 39, 15, 15, mouseX, mouseY)) {
             if (activeNode != -1 && this.menu.pos != null) {
-                PacketDistributor.sendToServer(new DisconnectFromNodePacket(this.menu.pos));
+                PacketDistributor.sendToServer(new DisconnectFromNodePacket(menu.nextActionToken(), this.menu.pos));
                 requestNodeRefresh();
                 cancelAllInputModes();
             }
@@ -897,7 +898,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
                     waitPass = i;
                     inputPass = new StringBuilder();
                 } else if (this.menu.pos != null && node.pos() != null) {
-                    PacketDistributor.sendToServer(new ConnectToNodePacket(this.menu.pos, node.pos(), java.util.Optional.empty()));
+                    PacketDistributor.sendToServer(new ConnectToNodePacket(menu.nextActionToken(), this.menu.pos, node.pos(), java.util.Optional.empty()));
                     requestNodeRefresh();
                 }
                 // Entry hit boxes deliberately have a little vertical padding
@@ -917,11 +918,12 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
 
     /** Node-to-Matrix page click handling. */
     private void handleNodeClick(double mouseX, double mouseY) {
+        if (!menu.actionSessionReady()) return;
         if (!canManageNodeTopology()) return;
         if (isHoveringButton(this.leftPos + 144, this.topPos + 39,
                 15, 15, mouseX, mouseY)) {
             if (activeMatrixNetwork >= 0 && menu.pos != null) {
-                PacketDistributor.sendToServer(new DisconnectNodeFromMatrixPacket(menu.pos));
+                PacketDistributor.sendToServer(new DisconnectNodeFromMatrixPacket(menu.nextActionToken(), menu.pos));
                 requestMatrixNetworkRefresh();
                 cancelAllInputModes();
             }
@@ -959,7 +961,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
                 waitMatrixPassword = networkIndex;
                 matrixPasswordInput.setLength(0);
             } else if (menu.pos != null && network.pos() != null) {
-                PacketDistributor.sendToServer(new ConnectNodeToMatrixPacket(
+                PacketDistributor.sendToServer(new ConnectNodeToMatrixPacket(menu.nextActionToken(),
                         menu.pos, network.pos(), java.util.Optional.empty()));
                 requestMatrixNetworkRefresh();
             }
@@ -988,6 +990,9 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             return super.keyPressed(keyCode, scanCode, modifiers);
         }
 
+        // Do not discard a password draft if the session has not synchronized.
+        if ((keyCode == 257 || keyCode == 335) && !menu.actionSessionReady()) return true;
+
         // ====== NODE 面板输入 ======
         if (this.wirelessState == WirelessState.NODE) {
             if (keyCode == 259) {
@@ -1000,7 +1005,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
                 if (waitMatrixPassword >= 0 && waitMatrixPassword < serverMatrixNetworks.size()) {
                     NetworkEntry target = serverMatrixNetworks.get(waitMatrixPassword);
                     if (menu.pos != null && target.pos() != null) {
-                        PacketDistributor.sendToServer(new ConnectNodeToMatrixPacket(menu.pos,
+                        PacketDistributor.sendToServer(new ConnectNodeToMatrixPacket(menu.nextActionToken(), menu.pos,
                                 target.pos(), java.util.Optional.of(matrixPasswordInput.toString())));
                         requestMatrixNetworkRefresh();
                     }
@@ -1024,7 +1029,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
                 if (waitPass != -1 && waitPass < serverNodes.size()) {
                     NodeEntry targetNode = serverNodes.get(waitPass);
                     if (this.menu.pos != null && targetNode.pos() != null) {
-                        PacketDistributor.sendToServer(new ConnectToNodePacket(
+                        PacketDistributor.sendToServer(new ConnectToNodePacket(menu.nextActionToken(),
                                 this.menu.pos, targetNode.pos(),
                                 java.util.Optional.of(inputPass.toString())
                         ));

@@ -1,14 +1,12 @@
 {
   "required": true,
-  "minVersion": "0.8",
+  "minVersion": "0.8.7",
   "package": "com.mohistmc.academy.mixin",
-  "compatibilityLevel": "JAVA_8",
-  "refmap": "untitled47.refmap.json",
+  "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "LivingEntityAbilityBoundaryMixin",
+    "CommonHooksAbilityDeathMixin"
   ],
-  "client": [
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+  "client": [],
+  "injectors": { "defaultRequire": 1 }
 }

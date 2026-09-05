@@ -41,6 +41,7 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
     private Button previous;
     private Button next;
     private boolean canManage;
+    private boolean initialStateRequested;
     private int page;
     private int stateRange = AbilityInterferenceRules.MIN_RANGE;
     private int stateEnergy;
@@ -59,6 +60,8 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
     @Override
     protected void init() {
         super.init();
+        removeButtons.clear();
+        initialStateRequested = false;
         stateRange = menu.getRange();
         stateEnergy = menu.getEnergy();
         stateEnabled = menu.isEnabled();
@@ -81,7 +84,7 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
         addRenderableWidget(addName);
         add = addRenderableWidget(Button.builder(Component.literal("+"), ignored -> {
                     String name = addName.getValue().strip();
-                    if (!name.isEmpty()) {
+                    if (!name.isEmpty() && menu.actionSessionReady()) {
                         send(AbilityInterfererConfigPacket.ADD_WHITELIST, 0, name);
                         addName.setValue("");
                     }
@@ -103,7 +106,7 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
                         }
                     }).bounds(leftPos + 146, topPos + 88 + row * 16, 18, 14).build()));
         }
-        send(AbilityInterfererConfigPacket.REQUEST, 0, "");
+        requestInitialStateWhenReady();
         updateWidgets();
     }
 
@@ -113,9 +116,16 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
     }
 
     private void send(int action, int value, String target) {
-        if (menu.pos != null) {
-            PacketDistributor.sendToServer(new AbilityInterfererConfigPacket(
+        if (menu.pos != null && menu.actionSessionReady()) {
+            PacketDistributor.sendToServer(new AbilityInterfererConfigPacket(menu.nextActionToken(),
                     menu.pos, action, value, target));
+        }
+    }
+
+    private void requestInitialStateWhenReady() {
+        if (!initialStateRequested && menu.pos != null && menu.actionSessionReady()) {
+            send(AbilityInterfererConfigPacket.REQUEST, 0, "");
+            initialStateRequested = true;
         }
     }
 
@@ -137,6 +147,7 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
     private void updateWidgets() {
         if (toggle == null) return;
         boolean visible = !panelActive;
+        boolean editable = canManage && menu.actionSessionReady();
         toggle.visible = visible;
         rangeDown.visible = visible;
         rangeUp.visible = visible;
@@ -144,25 +155,26 @@ public final class AbilityInterfererGui extends AcademyBaseUI<AbilityInterfererM
         add.visible = visible;
         previous.visible = visible;
         next.visible = visible;
-        toggle.active = canManage;
-        rangeDown.active = canManage && stateRange > AbilityInterferenceRules.MIN_RANGE;
-        rangeUp.active = canManage && stateRange < AbilityInterferenceRules.MAX_RANGE;
-        addName.setEditable(canManage);
-        add.active = canManage && whitelist.size() < AbilityInterfererBlockEntity.MAX_WHITELIST;
-        previous.active = canManage && page > 0;
-        next.active = canManage && (page + 1) * ROWS < whitelist.size();
+        toggle.active = editable;
+        rangeDown.active = editable && stateRange > AbilityInterferenceRules.MIN_RANGE;
+        rangeUp.active = editable && stateRange < AbilityInterferenceRules.MAX_RANGE;
+        addName.setEditable(editable);
+        add.active = editable && whitelist.size() < AbilityInterfererBlockEntity.MAX_WHITELIST;
+        previous.active = editable && page > 0;
+        next.active = editable && (page + 1) * ROWS < whitelist.size();
         toggle.setMessage(toggleLabel());
         for (int row = 0; row < removeButtons.size(); row++) {
             Button button = removeButtons.get(row);
             int index = page * ROWS + row;
             button.visible = visible && index < whitelist.size();
             // The owner is sorted first and is permanently whitelisted.
-            button.active = canManage && index > 0 && index < whitelist.size();
+            button.active = editable && index > 0 && index < whitelist.size();
         }
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        requestInitialStateWhenReady();
         updateWidgets();
         super.render(graphics, mouseX, mouseY, partialTick);
     }

@@ -16,47 +16,13 @@ if ($null -eq $modVersionLine) {
     throw 'mod_version is missing from gradle.properties'
 }
 $modVersion = ($modVersionLine -split '=', 2)[1].Trim()
-$excludedTopDirectories = @(
-    '.git', '.gradle', 'build', 'net', 'run', 'run-client-gate',
-    'run-machine-gate', 'run-server-gate'
-)
-
-function Get-ProjectRelativePath {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    if (-not $Path.StartsWith($projectPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "Path is outside the project root: $Path"
-    }
-    return $Path.Substring($projectPrefix.Length).Replace('\', '/')
-}
-
-$inputs = Get-ChildItem -LiteralPath $projectRoot -File -Recurse -Force | Where-Object {
-    $relative = Get-ProjectRelativePath -Path $_.FullName
-    $segments = $relative.Split('/')
-    $top = $segments[0]
-    $top -notin $excludedTopDirectories -and
-        -not $top.StartsWith('run-packaged-', [System.StringComparison]::OrdinalIgnoreCase) -and
-        -not ($segments -contains '.cache') -and
-        $relative -ne 'BUILD-INFO.txt' -and
-        -not $relative.StartsWith('src/generated/resources/.cache/', [System.StringComparison]::OrdinalIgnoreCase)
-} | ForEach-Object {
-    $relative = Get-ProjectRelativePath -Path $_.FullName
-    [pscustomobject]@{ Relative = $relative; Hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
-}
-
-$sortedLines = [System.Collections.Generic.SortedDictionary[string,string]]::new([System.StringComparer]::Ordinal)
-foreach ($inputFile in $inputs) {
-    $sortedLines.Add($inputFile.Relative, "$($inputFile.Hash)  $($inputFile.Relative)`n")
-}
-$canonical = ($sortedLines.Values) -join ''
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($canonical)
-$sha256 = [System.Security.Cryptography.SHA256]::Create()
-try {
-    $sha = $sha256.ComputeHash($bytes)
-} finally {
-    $sha256.Dispose()
-}
-$treeHash = ([System.BitConverter]::ToString($sha)).Replace('-', '').ToLowerInvariant()
+. (Join-Path $PSScriptRoot 'source-files.ps1')
+$source = Get-AcademyDirectoryTreeDigest -ProjectRoot $projectRoot
+$treeHash = $source.Hash
+$wrapperProperties = [System.IO.File]::ReadAllText((Join-Path $projectRoot 'gradle/wrapper/gradle-wrapper.properties'))
+$wrapperMatch = [regex]::Match($wrapperProperties, '(?m)^distributionUrl=.*?/gradle-(.+)-(?:bin|all)\.zip\s*$')
+if (-not $wrapperMatch.Success) { throw 'Cannot determine Gradle wrapper version from distributionUrl.' }
+$wrapperVersion = $wrapperMatch.Groups[1].Value
 $javaInfo = New-Object System.Diagnostics.ProcessStartInfo
 $javaInfo.FileName = 'java'
 $javaInfo.Arguments = '-version'
@@ -101,7 +67,7 @@ $sourceContractHeuristic = @($testSources | Where-Object {
 }).Count
 
 $content = @(
-    'Format-Version=1'
+    'Format-Version=2'
     'Project=AcademyCraft 1.21.1 reconstruction'
     "Mod-Version=$modVersion"
     'Minecraft-Version=1.21.1'
@@ -110,8 +76,9 @@ $content = @(
     'Legacy-Upstream-SHA=7b1401cd420bd6888a2b9d8db5cd8a69fe314bb9'
     "Evaluation-Date=$EvaluationDate"
     "Source-Tree-SHA256=$treeHash"
+    "Source-File-Count=$($source.Count)"
     'Source-Tree-Hash-Algorithm=SHA-256 over ordinal-relative-path-sorted UTF-8 lines: lowercase-file-sha256 two-spaces relative-path newline'
-    'Source-Tree-Hash-Excludes=BUILD-INFO.txt,.git/**,.gradle/**,build/**,net/**,run/**,run-client-gate/**,run-machine-gate/**,run-server-gate/**,run-packaged-*/**,**/.cache/**,src/generated/resources/.cache/**'
+    'Source-Tree-Inventory=scripts/source-files.ps1; root build/license/readme files plus gradle/**,src/**,scripts/**,docs/**,.github/**; excludes BUILD-INFO.txt,linked paths,log files and runtime/cache/build/audit directories'
     "JUnit-Tests=$junitEvidence"
     "Source-Contract-Heuristic=$sourceContractHeuristic of $($testSources.Count) test source files contain Files.readString or .contains(; review docs/TESTING.md"
     "GameTests=$GameTestEvidence"
@@ -119,7 +86,8 @@ $content = @(
     "Packaged-Server-Gate=$PackagedServerGateEvidence"
     "Packaged-Client-Gate=$PackagedClientGateEvidence"
     "Release-Fixes=$ReleaseFixes"
-    'Gradle-Version=9.2.1'
+    "Gradle-Version=$wrapperVersion"
+    'Gradle-Version-Source=gradle/wrapper/gradle-wrapper.properties distributionUrl; use ./gradlew for the release build'
     "Java-Version=$javaVersion"
 ) -join "`n"
 

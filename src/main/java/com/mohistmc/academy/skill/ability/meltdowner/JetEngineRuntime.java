@@ -17,9 +17,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /** Server-authoritative reproduction of the legacy client-driven Jet Engine phase. */
@@ -122,8 +122,15 @@ public final class JetEngineRuntime {
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) stop(player, true);
     }
-    @SubscribeEvent public static void death(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) stop(player, true);
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) stop(player, true);
+    }
+    @SubscribeEvent public static void serverStopping(ServerStoppingEvent event) {
+        // stopServer saves players before its asynchronous disconnect callbacks finish.
+        // Restore only active contexts, using each player's captured pre-skill speed.
+        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+            stop(player, true);
+        }
     }
     @SubscribeEvent public static void serverStopped(ServerStoppedEvent event) { ACTIVE.clear(); }
 }

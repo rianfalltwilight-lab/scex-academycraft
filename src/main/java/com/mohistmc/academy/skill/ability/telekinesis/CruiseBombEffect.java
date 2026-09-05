@@ -32,7 +32,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -262,6 +261,6 @@ public final class CruiseBombEffect implements SkillEffect {
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) { clear(event.getEntity()); }
     @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event) { clear(event.getEntity()); }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) { clear(event.getEntity()); }
-    @SubscribeEvent public static void death(LivingDeathEvent event) { clear(event.getEntity()); }
+    public static void onConfirmedDeath(net.minecraft.world.entity.LivingEntity entity) { clear(entity); }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { SESSIONS.clear(); }
 }

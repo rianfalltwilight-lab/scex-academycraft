@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Bounded, rate-limited control plane for the Ability Interferer menu. */
-public record AbilityInterfererConfigPacket(BlockPos pos, int action, int value, String target)
+public record AbilityInterfererConfigPacket(MenuActionToken actionToken, BlockPos pos, int action, int value, String target)
         implements CustomPacketPayload {
     public static final int REQUEST = 0;
     public static final int TOGGLE = 1;
@@ -30,6 +30,7 @@ public record AbilityInterfererConfigPacket(BlockPos pos, int action, int value,
             ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "ability_interferer_config"));
     public static final StreamCodec<ByteBuf, AbilityInterfererConfigPacket> STREAM_CODEC =
             StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, AbilityInterfererConfigPacket::actionToken,
                     BlockPos.STREAM_CODEC, AbilityInterfererConfigPacket::pos,
                     ByteBufCodecs.INT, AbilityInterfererConfigPacket::action,
                     ByteBufCodecs.INT, AbilityInterfererConfigPacket::value,
@@ -43,6 +44,7 @@ public record AbilityInterfererConfigPacket(BlockPos pos, int action, int value,
             if (!(context.player() instanceof ServerPlayer player)
                     || !(player.containerMenu instanceof AbilityInterfererMenu menu)
                     || !packet.pos.equals(menu.pos) || !menu.stillValid(player)
+                    || packet.action != REQUEST && !menu.acceptAction(packet.actionToken(), player)
                     || packet.action < REQUEST || packet.action > REMOVE_WHITELIST
                     || packet.target == null || packet.target.length() > MAX_TARGET) return;
             long now = player.serverLevel().getGameTime();

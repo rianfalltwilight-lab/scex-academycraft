@@ -19,7 +19,7 @@ import com.mohistmc.academy.world.AcademyItems;
 /**
  * 客户端→服务端：初始化矩阵网络。
  */
-public record InitMatrixPacket(BlockPos pos, String ssid, String password) implements CustomPacketPayload {
+public record InitMatrixPacket(MenuActionToken actionToken, BlockPos pos, String ssid, String password) implements CustomPacketPayload {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final int MAX_SSID_LENGTH = NetworkInputLimits.SSID;
     private static final int MAX_PASSWORD_LENGTH = NetworkInputLimits.PASSWORD;
@@ -29,6 +29,7 @@ public record InitMatrixPacket(BlockPos pos, String ssid, String password) imple
 
     public static final StreamCodec<ByteBuf, InitMatrixPacket> STREAM_CODEC =
             StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, InitMatrixPacket::actionToken,
                     BlockPos.STREAM_CODEC, InitMatrixPacket::pos,
                     ByteBufCodecs.stringUtf8(MAX_SSID_LENGTH), InitMatrixPacket::ssid,
                     ByteBufCodecs.stringUtf8(MAX_PASSWORD_LENGTH), InitMatrixPacket::password,
@@ -47,7 +48,7 @@ public record InitMatrixPacket(BlockPos pos, String ssid, String password) imple
                         || !NetworkInputLimits.validOptional(packet.password(), MAX_PASSWORD_LENGTH)) return;
                 ServerLevel level = player.serverLevel();
                 if (!(player.containerMenu instanceof MatrixMenu menu)
-                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player)) return;
+                        || !packet.pos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)) return;
                 if (!level.isLoaded(packet.pos())
                         || player.distanceToSqr(packet.pos().getX() + 0.5, packet.pos().getY() + 0.5,
                         packet.pos().getZ() + 0.5) > 64.0

@@ -17,13 +17,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Server-authoritative bulk link/unlink of owned, loaded nodes inside matrix range. */
-public record MatrixNodesPacket(BlockPos matrixPos, boolean connect) implements CustomPacketPayload {
+public record MatrixNodesPacket(MenuActionToken actionToken, BlockPos matrixPos, boolean connect) implements CustomPacketPayload {
     private static final long COOLDOWN_TICKS = 10;
     private static final java.util.Map<RequestKey, Long> LAST_REQUEST = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<java.util.UUID, Long> LAST_PLAYER_REQUEST = new java.util.concurrent.ConcurrentHashMap<>();
     private record RequestKey(java.util.UUID player, BlockPos matrix) {}
     public static final Type<MatrixNodesPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(AcademyCraft.MODID, "matrix_nodes"));
     public static final StreamCodec<ByteBuf, MatrixNodesPacket> STREAM_CODEC = StreamCodec.composite(
+                    MenuActionToken.STREAM_CODEC, MatrixNodesPacket::actionToken,
             BlockPos.STREAM_CODEC, MatrixNodesPacket::matrixPos,
             ByteBufCodecs.BOOL, MatrixNodesPacket::connect,
             MatrixNodesPacket::new);
@@ -33,7 +34,7 @@ public record MatrixNodesPacket(BlockPos matrixPos, boolean connect) implements 
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)
                     || !(player.containerMenu instanceof MatrixMenu menu)
-                    || !packet.matrixPos.equals(menu.pos) || !menu.stillValid(player)
+                    || !packet.matrixPos.equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)
                     || !player.serverLevel().isLoaded(packet.matrixPos)
                     || !player.serverLevel().mayInteract(player, packet.matrixPos)
                     || !(player.serverLevel().getBlockEntity(packet.matrixPos) instanceof MatrixBlockEntity matrix)

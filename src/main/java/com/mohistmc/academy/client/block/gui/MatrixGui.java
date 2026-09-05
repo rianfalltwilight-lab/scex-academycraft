@@ -98,7 +98,7 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
                             ? "§a核心与约束板已就绪" : "§c需要核心与三块约束板",
                     px + 6, py + 58, 0xFFFFFFFF, false);
             drawButton(graphics, px + BUTTON_X, py + 78, Component.literal("INIT"),
-                    mouseX, mouseY, menu.hasInitializationMaterials());
+                    mouseX, mouseY, menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.canEdit());
         }
     }
 
@@ -111,8 +111,8 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
 
         if (!menu.isInitialized()) {
             if (inside(mouseX, mouseY, px + BUTTON_X, py + 78, BUTTON_W, BUTTON_H)
-                    && menu.hasInitializationMaterials() && menu.pos != null && menu.canEdit()) {
-                PacketDistributor.sendToServer(new InitMatrixPacket(menu.pos,
+                    && menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.pos != null && menu.canEdit()) {
+                PacketDistributor.sendToServer(new InitMatrixPacket(menu.nextActionToken(), menu.pos,
                         ssidInput.isEmpty() ? "Unnamed" : ssidInput.toString(), passwordInput.toString()));
                 return true;
             }
@@ -143,8 +143,9 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
             return true;
         }
         if (keyCode == 257 || keyCode == 335) {
+            if (!menu.actionSessionReady()) return true;
             if (menu.isInitialized() && menu.pos != null) {
-                PacketDistributor.sendToServer(new MatrixConfigPacket(menu.pos,
+                PacketDistributor.sendToServer(new MatrixConfigPacket(menu.nextActionToken(), menu.pos,
                         editingSsid ? java.util.Optional.of(ssidInput.toString()) : java.util.Optional.empty(),
                         editingPassword ? java.util.Optional.of(passwordInput.toString()) : java.util.Optional.empty()));
                 passwordInput.setLength(0);
