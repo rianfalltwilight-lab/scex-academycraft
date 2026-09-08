@@ -90,6 +90,10 @@ public class MatrixMenu extends AcademyMenu {
     public int getRange() { return Math.max(0, machineData.get(3)); }
     public boolean hasPasswordConfigured() { return (machineData.get(4) & 1) != 0; }
     public boolean hasInitializationMaterials() { return (machineData.get(4) & 2) != 0; }
+    public String getCurrentSsid() {
+        if (inv.player.level().getBlockEntity(pos) instanceof MatrixBlockEntity matrix) return matrix.getSSID();
+        return initialSsid;
+    }
     public String getInitialSsid() { return initialSsid; }
     public String getOwnerLabel() { return ownerLabel; }
     public boolean canEdit() { return canEdit; }

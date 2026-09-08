@@ -34,6 +34,12 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
     private final StringBuilder ssidInput = new StringBuilder();
     private final StringBuilder passwordInput = new StringBuilder();
     private boolean inputStateInitialized;
+    private boolean ssidEdited, passwordEdited;
+    private com.mohistmc.academy.network.MenuActionToken pendingToken;
+    private String pendingSsid, pendingPassword;
+    private String saveStatus = "";
+    private String observedSsid;
+    private int pendingTicks;
 
     public MatrixGui(MatrixMenu menu, Inventory inv, Component title) {
         super(menu, inv, title, WirelessState.DEFAULT);
@@ -76,7 +82,7 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
                 : menu.isInitialized() ? ssidInput.toString()
                 : ssidInput.isEmpty() ? "点击设置" : ssidInput.toString();
         graphics.drawString(font, trim("SSID: " + ssid), px + 6, py + 23, 0xFFCCCCCC, false);
-        String password = editingPassword ? "*".repeat(passwordInput.length()) + "▌"
+        String password = passwordEdited ? "*".repeat(passwordInput.length()) + (editingPassword ? "▌" : "")
                 : menu.hasPasswordConfigured() ? "点击修改" : "无";
         graphics.drawString(font, trim("密码: " + password), px + 6, py + 36, 0xFFCCCCCC, false);
 
@@ -90,15 +96,16 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
                 graphics.drawString(font, trim("§c补齐核心与三块约束板后自动恢复"), px + 6, py + 106,
                         0xFFFFFFFF, false);
             }
-            graphics.drawString(font, trim(menu.canEdit()
-                            ? "点字段，回车保存" : "在节点无线页选择"),
+            graphics.drawString(font, trim(!saveStatus.isEmpty() ? saveStatus : ssidEdited || passwordEdited
+                            ? "有修改，回车保存" : menu.canEdit() ? "点字段，回车保存" : "在节点无线页选择"),
                     px + 6, py + 121, 0xFF8FBBD0, false);
         } else {
             graphics.drawString(font, menu.hasInitializationMaterials()
                             ? "§a核心与约束板已就绪" : "§c需要核心与三块约束板",
                     px + 6, py + 58, 0xFFFFFFFF, false);
+            graphics.drawString(font, trim(saveStatus), px + 6, py + 106, 0xFF8FBBD0, false);
             drawButton(graphics, px + BUTTON_X, py + 78, Component.literal("INIT"),
-                    mouseX, mouseY, menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.canEdit());
+                    mouseX, mouseY, pendingToken == null && menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.canEdit());
         }
     }
 
@@ -111,21 +118,28 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
 
         if (!menu.isInitialized()) {
             if (inside(mouseX, mouseY, px + BUTTON_X, py + 78, BUTTON_W, BUTTON_H)
-                    && menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.pos != null && menu.canEdit()) {
-                PacketDistributor.sendToServer(new InitMatrixPacket(menu.nextActionToken(), menu.pos,
-                        ssidInput.isEmpty() ? "Unnamed" : ssidInput.toString(), passwordInput.toString()));
+                    && pendingToken == null && menu.hasInitializationMaterials() && menu.actionSessionReady() && menu.pos != null && menu.canEdit()) {
+                pendingToken = menu.nextActionToken();
+                pendingTicks = 0;
+                pendingSsid = ssidInput.isEmpty() ? "Unnamed" : ssidInput.toString();
+                pendingPassword = passwordInput.toString();
+                saveStatus = "保存中…";
+                PacketDistributor.sendToServer(new InitMatrixPacket(pendingToken, menu.pos, pendingSsid, pendingPassword));
+                editingSsid = editingPassword = false;
                 return true;
             }
         }
-        if (menu.canEdit() && inside(mouseX, mouseY, px + 4, py + 18, PANEL_W - 8, 14)) {
+        if (pendingToken == null && menu.canEdit() && inside(mouseX, mouseY, px + 4, py + 18, PANEL_W - 8, 14)) {
             editingSsid = true;
             editingPassword = false;
             return true;
         }
-        if (menu.canEdit() && inside(mouseX, mouseY, px + 4, py + 32, PANEL_W - 8, 14)) {
+        if (pendingToken == null && menu.canEdit() && inside(mouseX, mouseY, px + 4, py + 32, PANEL_W - 8, 14)) {
             editingPassword = true;
             editingSsid = false;
-            passwordInput.setLength(0);
+            if (!passwordEdited) passwordInput.setLength(0);
+            passwordEdited = true;
+            saveStatus = "";
             return true;
         }
 
@@ -136,20 +150,18 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if ((keyCode == 257 || keyCode == 335) && menu.isInitialized()
+                && (editingSsid || editingPassword || ssidEdited || passwordEdited)) {
+            submitConfig();
+            return true;
+        }
         if (!editingSsid && !editingPassword) return super.keyPressed(keyCode, scanCode, modifiers);
         StringBuilder target = editingSsid ? ssidInput : passwordInput;
         if (keyCode == 259) {
-            if (!target.isEmpty()) target.deleteCharAt(target.length() - 1);
+            if (!target.isEmpty()) { target.deleteCharAt(target.length() - 1); markEdited(); }
             return true;
         }
         if (keyCode == 257 || keyCode == 335) {
-            if (!menu.actionSessionReady()) return true;
-            if (menu.isInitialized() && menu.pos != null) {
-                PacketDistributor.sendToServer(new MatrixConfigPacket(menu.nextActionToken(), menu.pos,
-                        editingSsid ? java.util.Optional.of(ssidInput.toString()) : java.util.Optional.empty(),
-                        editingPassword ? java.util.Optional.of(passwordInput.toString()) : java.util.Optional.empty()));
-                passwordInput.setLength(0);
-            }
             editingSsid = false;
             editingPassword = false;
             return true;
@@ -157,6 +169,11 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
         if (keyCode == 256) {
             editingSsid = false;
             editingPassword = false;
+            // Escape cancels drafts; do not leave an unsaved SSID looking confirmed.
+            ssidInput.setLength(0);
+            ssidInput.append(menu.getCurrentSsid());
+            ssidEdited = passwordEdited = false;
+            saveStatus = "";
             passwordInput.setLength(0);
             return true;
         }
@@ -168,14 +185,74 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
         if (!editingSsid && !editingPassword) return super.charTyped(codePoint, modifiers);
         StringBuilder target = editingSsid ? ssidInput : passwordInput;
         int limit = editingSsid ? NetworkInputLimits.SSID : NetworkInputLimits.PASSWORD;
-        if (!Character.isISOControl(codePoint) && target.length() < limit) target.append(codePoint);
+        if (!Character.isISOControl(codePoint) && target.length() < limit) { target.append(codePoint); markEdited(); }
         return true;
     }
 
     private void initializeInputState() {
-        if (inputStateInitialized) return;
+        String current = menu.getCurrentSsid();
+        if (inputStateInitialized) {
+            if (!java.util.Objects.equals(current, observedSsid)) {
+                observedSsid = current;
+                if (!ssidEdited && pendingToken == null) {
+                    ssidInput.setLength(0);
+                    ssidInput.append(current);
+                }
+            }
+            return;
+        }
+        observedSsid = current;
         ssidInput.append(menu.getInitialSsid());
         inputStateInitialized = true;
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (pendingToken != null && ++pendingTicks > 200) {
+            pendingToken = null;
+            pendingSsid = pendingPassword = null;
+            saveStatus = "未确认，请重试";
+        }
+    }
+
+    private void markEdited() {
+        if (editingSsid) ssidEdited = true;
+        if (editingPassword) passwordEdited = true;
+        saveStatus = "";
+    }
+
+    private void submitConfig() {
+        if (pendingToken != null) return;
+        if (!menu.actionSessionReady()) { saveStatus = "同步中，请回车"; return; }
+        if (!menu.canEdit() || menu.pos == null) { saveStatus = "无权修改"; return; }
+        if (!ssidEdited && !passwordEdited) return;
+        if (ssidEdited && !NetworkInputLimits.validRequired(ssidInput.toString(), NetworkInputLimits.SSID)) {
+            saveStatus = "SSID 不能为空";
+            return;
+        }
+        pendingToken = menu.nextActionToken();
+        pendingTicks = 0;
+        pendingSsid = ssidEdited ? ssidInput.toString() : null;
+        pendingPassword = passwordEdited ? passwordInput.toString() : null;
+        saveStatus = "保存中…";
+        // Submit every edited field, never an untouched opening snapshot.
+        PacketDistributor.sendToServer(new MatrixConfigPacket(pendingToken, menu.pos,
+                java.util.Optional.ofNullable(pendingSsid), java.util.Optional.ofNullable(pendingPassword)));
+        editingSsid = editingPassword = false;
+    }
+
+    public void acceptMatrixConfigResult(com.mohistmc.academy.network.MatrixConfigResultPacket result) {
+        if (!result.pos().equals(menu.pos) || !result.actionToken().equals(pendingToken)) return;
+        saveStatus = result.accepted() ? "已保存" : "保存失败，请重试";
+        if (result.accepted()) {
+            ssidInput.setLength(0);
+            ssidInput.append(result.ssid());
+            ssidEdited = passwordEdited = false;
+            passwordInput.setLength(0);
+        }
+        pendingToken = null;
+        pendingSsid = pendingPassword = null;
     }
 
     /** Exercise the real INIT hit box in the isolated client integration gate. */

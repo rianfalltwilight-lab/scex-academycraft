@@ -92,6 +92,39 @@ public final class MatrixNetworkFlowGameTests {
             h.succeed();
         });
     }
+    @GameTest(template="empty",timeoutTicks=100)
+    public static void matrixSsidRenamePersistsAndPasswordOnlyDoesNotRestoreOpeningName(GameTestHelper h) {
+        var level=h.getLevel(); var mp=h.absolutePos(new BlockPos(3,2,3));
+        level.setBlock(mp,AcademyBlocks.MATRIX.get().defaultBlockState(),3);
+        var matrix=(MatrixBlockEntity)level.getBlockEntity(mp);
+        var player=h.makeMockServerPlayerInLevel();
+        player.setPos(mp.getX()+.5,mp.getY()+.5,mp.getZ()+.5);
+        matrix.setOwnerUUID(player.getUUID());
+        matrix.getItems().set(MatrixBlockEntity.CORE_SLOT,new ItemStack(AcademyItems.MAT_CORE_0.get()));
+        for(int slot=0;slot<3;slot++) matrix.getItems().set(slot,new ItemStack(AcademyItems.CONSTRAINT_PLATE.get()));
+        var buf=new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(mp);
+        MatrixMenu menu;try{menu=new MatrixMenu(70,player.getInventory(),buf);}finally{buf.release();}
+        player.containerMenu=menu;
+        InitMatrixPacket.handle(new InitMatrixPacket(menu.nextActionToken(),mp,"Unnamed",""),context(player));
+        MatrixConfigPacket.handle(new MatrixConfigPacket(menu.nextActionToken(),mp,Optional.of("123"),Optional.of("secret")),context(player));
+        var net=WiWorldData.get(level).getNetwork(matrix);
+        require(net!=null&&net.getSSID().equals("123")&&matrix.getSSID().equals("123"),"combined SSID/password save lost SSID");
+        require(net.getPassword().equals("secret"),"combined save lost password");
+        MatrixConfigPacket.handle(new MatrixConfigPacket(menu.nextActionToken(),mp,Optional.of("中文矩阵"),Optional.empty()),context(player));
+        require(net.getPassword().equals("secret"),"SSID-only save cleared password");
+        MatrixConfigPacket.handle(new MatrixConfigPacket(menu.nextActionToken(),mp,Optional.empty(),Optional.of("next")),context(player));
+        require(net.getSSID().equals("中文矩阵")&&matrix.getSSID().equals("中文矩阵"),"password-only save restored opening SSID");
+        require(WiWorldData.get(level).rangeSearch(mp.getX(),mp.getY(),mp.getZ(),24,20).stream()
+                .anyMatch(n->n.getSSID().equals("中文矩阵")),"discovery source still has unnamed SSID");
+        var saved=matrix.saveWithoutMetadata(level.registryAccess());
+        require(saved.getString("ssid").equals("中文矩阵"),"matrix NBT lost SSID");
+        var networkSave=WiWorldData.get(level).save(new CompoundTag(),level.registryAccess());
+        require(networkSave.toString().contains("中文矩阵"),"network NBT lost SSID");
+        MatrixConfigPacket.handle(new MatrixConfigPacket(menu.nextActionToken(),mp,Optional.of(" "),Optional.of("bad")),context(player));
+        require(net.getSSID().equals("中文矩阵")&&net.getPassword().equals("next"),"invalid SSID partially changed configuration");
+        System.out.println("MATRIX_SSID_FLOW_PASS combined/name-only/password-only/discovery/NBT/invalid-input");
+        h.succeed();
+    }
     private static void require(boolean b,String message){if(!b)throw new net.minecraft.gametest.framework.GameTestAssertException(message);}
     private static IPayloadContext context(ServerPlayer p){return (IPayloadContext)Proxy.newProxyInstance(IPayloadContext.class.getClassLoader(),new Class<?>[]{IPayloadContext.class},(proxy,m,args)->{
         if(m.getName().equals("player"))return p;

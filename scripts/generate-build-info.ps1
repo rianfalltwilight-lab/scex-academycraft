@@ -36,7 +36,10 @@ $javaProcess.WaitForExit()
 if ($javaProcess.ExitCode -ne 0) {
     throw "java -version failed with exit code $($javaProcess.ExitCode)"
 }
-$javaVersion = (($javaStderr + $javaStdout) -split "`r?`n" | Select-Object -First 1).Trim()
+$javaVersionLine = ($javaStderr + $javaStdout) -split "`r?`n" |
+    Where-Object { $_ -match '^(?:openjdk|java) version ' } | Select-Object -First 1
+if ([string]::IsNullOrWhiteSpace($javaVersionLine)) { throw 'Cannot identify java -version output.' }
+$javaVersion = $javaVersionLine.Trim()
 
 # JUnit XML proves only the assertions it contains. Keep the aggregate separate
 # from the heuristic count of source/resource contract files so it can never be

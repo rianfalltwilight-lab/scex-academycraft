@@ -48,11 +48,12 @@ public record MatrixConfigPacket(MenuActionToken actionToken, BlockPos matrixPos
                     || !level.mayInteract(player, packet.matrixPos())
                     || !(level.getBlockEntity(packet.matrixPos()) instanceof MatrixBlockEntity matrix)
                     || !matrix.canManage(player) || !matrix.isInitialized()) {
+                reply(player, packet.actionToken(), packet.matrixPos(), false);
                 return;
             }
 
             var state = WirelessSystem.reconcileMatrixNetwork(level, matrix);
-            if (!state.active()) return;
+            if (!state.active()) { reply(player, packet.actionToken(), packet.matrixPos(), false); return; }
             boolean changed = true;
             if (packet.ssid().isPresent()) {
                 changed = WirelessSystem.changeSSID(level, matrix, packet.ssid().get());
@@ -60,8 +61,18 @@ public record MatrixConfigPacket(MenuActionToken actionToken, BlockPos matrixPos
             if (changed && packet.password().isPresent()) {
                 changed = WirelessSystem.changePassword(level, matrix, packet.password().get());
             }
+            reply(player, packet.actionToken(), packet.matrixPos(), changed);
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal(changed
                     ? "§a矩阵设置已保存" : "§c矩阵设置保存失败"));
         });
     }
+    static void reply(ServerPlayer player, MenuActionToken token, BlockPos pos, boolean accepted) {
+        if (token == null || !(player.containerMenu instanceof MatrixMenu menu)
+                || !pos.equals(menu.pos) || !menu.stillValid(player)
+                || !player.level().isLoaded(pos)
+                || !(player.level().getBlockEntity(pos) instanceof MatrixBlockEntity matrix)) return;
+        SafePayloadSender.send(player, new MatrixConfigResultPacket(token, pos, accepted,
+                matrix.getSSID().substring(0, Math.min(matrix.getSSID().length(), NetworkInputLimits.SSID))));
+    }
+
 }
