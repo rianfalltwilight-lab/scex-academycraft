@@ -47,21 +47,21 @@ public class MetalFomerMenu extends AcademyMenu {
         }
         addDataSlots(this.data);
 
-        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_IN, 13, 49) {
+        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_IN, 15, 49) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return MetalFomerBlockEntity.isSlotValid(inv.player.level(), MetalFomerBlockEntity.SLOT_IN, item);
             }
         });
 
-        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_OUT, 143, 49) {
+        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_OUT, 145, 49) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return false;
             }
         });
 
-        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_BATTERY, 42, 80) {
+        addAcademySlot(new Slot(container, MetalFomerBlockEntity.SLOT_BATTERY, 44, 80) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return MetalFomerBlockEntity.isSlotValid(inv.player.level(), MetalFomerBlockEntity.SLOT_BATTERY, item);

@@ -57,7 +57,7 @@ public class MatrixMenu extends AcademyMenu {
 
         // Preserve the final 1.12.2 ContainerMatrix order: three plate slots
         // are menu/container slots 0..2, followed by the core at slot 3.
-        int[][] platePos = {{78, 11}, {53, 60}, {104, 60}};
+        int[][] platePos = {{80, 11}, {55, 60}, {106, 60}};
         for (int i = 0; i < 3; i++) {
             addAcademySlot(new Slot(container, i, platePos[i][0], platePos[i][1]) {
                 @Override public int getMaxStackSize() { return 1; }
@@ -70,7 +70,7 @@ public class MatrixMenu extends AcademyMenu {
             });
         }
 
-        addAcademySlot(new Slot(container, MatrixBlockEntity.CORE_SLOT, 78, 36) {
+        addAcademySlot(new Slot(container, MatrixBlockEntity.CORE_SLOT, 80, 36) {
             @Override public int getMaxStackSize() { return 1; }
             @Override public int getMaxStackSize(ItemStack stack) { return 1; }
             @Override public boolean mayPickup(Player player) { return canEdit; }

@@ -33,7 +33,7 @@ public class WindGenMainMenu extends AcademyMenu {
         }
         addDataSlots(machineData);
 
-        addAcademySlot(new Slot(container, 0, 78, 9) {
+        addAcademySlot(new Slot(container, 0, 80, 9) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return item.is(AcademyItems.WINDGEN_FAN.get());

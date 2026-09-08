@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 /** Adversarial source contracts around the server-owned induction transaction. */
 class DevInductionContractTest {
     private static String source(String path) throws Exception {
-        return Files.readString(Path.of("src/main/java").resolve(path));
+        return Files.readString(Path.of("src/main/java").resolve(path)).replace("\r\n", "\n");
     }
 
     @Test void survivalFactorCannotBypassTheDeveloperSession() throws Exception {

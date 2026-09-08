@@ -45,29 +45,44 @@ public record NodeConfigPacket(MenuActionToken actionToken, BlockPos pos, Option
                 if (!(player.containerMenu instanceof BaseNodeMenu menu)
                         || !packet.pos().equals(menu.pos) || !menu.stillValid(player) || !menu.acceptAction(packet.actionToken(), player)) {
                     player.sendSystemMessage(Component.literal("§c节点界面已失效，请重新打开"));
+                    reply(player, packet, false);
                     return;
                 }
                 if (packet.name().filter(n -> !NetworkInputLimits.validRequired(n, MAX_NAME_LENGTH)).isPresent()
                         || packet.password().filter(p -> !NetworkInputLimits.validOptional(p, MAX_PASSWORD_LENGTH)).isPresent()) {
                     player.sendSystemMessage(Component.literal("§c节点名或密码格式无效"));
+                    reply(player, packet, false);
                     return;
                 }
                 if (!player.level().isLoaded(packet.pos())
                         || player.distanceToSqr(packet.pos().getX() + 0.5, packet.pos().getY() + 0.5,
                         packet.pos().getZ() + 0.5) > 64.0
-                        || !player.level().mayInteract(player, packet.pos())) return;
+                        || !player.level().mayInteract(player, packet.pos())) {
+                    reply(player, packet, false);
+                    return;
+                }
                 BlockEntity be = player.level().getBlockEntity(packet.pos());
                 if (be instanceof BaseNodeBlockEntity node) {
                     if (!node.canManage(player)) {
                         player.sendSystemMessage(Component.translatable("message.academy.node.owner_only"));
+                        reply(player, packet, false);
                         return;
                     }
                     packet.name().ifPresent(node::setNodeName);
                     packet.password().ifPresent(node::setPassword);
                     node.setChanged();
                     player.sendSystemMessage(Component.literal("§aNode config updated"));
+                    reply(player, packet, true);
                 }
             }
         });
     }
+    private static void reply(ServerPlayer player, NodeConfigPacket request, boolean accepted) {
+        if (request.actionToken() == null || !(player.containerMenu instanceof BaseNodeMenu menu)
+                || !request.pos().equals(menu.pos) || !menu.stillValid(player)
+                || !(player.level().getBlockEntity(request.pos()) instanceof BaseNodeBlockEntity node)) return;
+        SafePayloadSender.send(player, new NodeConfigResultPacket(request.actionToken(), request.pos(),
+                accepted, node.getNodeName(), node.hasPasswordConfigured(), node.getConfigRevision()));
+    }
+
 }

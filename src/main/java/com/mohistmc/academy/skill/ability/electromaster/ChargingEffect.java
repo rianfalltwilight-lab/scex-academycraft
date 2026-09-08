@@ -31,6 +31,8 @@ public class ChargingEffect implements ChargingSkillEffect {
     private static final Map<UUID, Float> OVERLOAD_FLOORS = new ConcurrentHashMap<>();
     private static final Map<UUID, Boolean> ITEM_MODES = new ConcurrentHashMap<>();
 
+    private static final Map<UUID, ChargingOutput> OUTPUTS = new ConcurrentHashMap<>();
+
     @FunctionalInterface
     private interface Receiver {
         int receive(int amount, boolean simulate);
@@ -79,13 +81,15 @@ public class ChargingEffect implements ChargingSkillEffect {
         OVERLOAD_FLOORS.put(player.getUUID(), data.getCurrentOverload());
         // 1.0.7 captures this mode once on key-down, even for an unsupported item.
         ITEM_MODES.put(player.getUUID(), !player.getMainHandItem().isEmpty());
+        OUTPUTS.put(player.getUUID(), new ChargingOutput());
     }
 
     @Override
     public boolean onChargingTick(ServerPlayer player, PlayerAbilityData data, int ticks) {
         float exp = data.getProficiency(getId());
         float consumption = lerpf(3, 7, exp);
-        float chargeAmount = lerpf(15, 35, exp);
+        ChargingOutput output = OUTPUTS.get(player.getUUID());
+        if (output == null) return false;
         Float overloadFloor = OVERLOAD_FLOORS.get(player.getUUID());
         if (overloadFloor == null) return false;
         if (!data.isDevMode() && data.getCurrentOverload() < overloadFloor) {
@@ -93,7 +97,7 @@ public class ChargingEffect implements ChargingSkillEffect {
         }
 
         int simulated = 0;
-        int requested = (int) chargeAmount;
+        int unitsPerIf = 1;
         Receiver receiver = null;
         ItemStack held = player.getMainHandItem();
         Boolean itemMode = ITEM_MODES.get(player.getUUID());
@@ -112,7 +116,7 @@ public class ChargingEffect implements ChargingSkillEffect {
                 if (external != null) {
                     supported = true;
                     receiver = external::receiveEnergy;
-                    requested = ExternalEnergyConversion.ifToFe(requested);
+                    unitsPerIf = ExternalEnergyConversion.FE_PER_IF;
                 }
             }
         } else {
@@ -136,17 +140,20 @@ public class ChargingEffect implements ChargingSkillEffect {
                     if (external != null) {
                         supported = true;
                         receiver = external::receiveEnergy;
-                        requested = ExternalEnergyConversion.ifToFe(requested);
+                        unitsPerIf = ExternalEnergyConversion.FE_PER_IF;
                     }
                 }
             }
         }
 
-        if (receiver != null) simulated = receiver.receive(requested, true);
+        int requested = output.preview(exp, unitsPerIf);
+        if (receiver != null) simulated = Math.clamp(receiver.receive(requested, true), 0, requested);
 
         // 1.0.7 consumes CP and grants the smaller practice increment even
         // while the ray points at an unsupported/full target.
         if (!DynamicSkillRules.tryPay(data,getId(),consumption,0)) return false;
+        // Advance only after CP payment; no deferred whole energy on full targets.
+        output.commit(exp, unitsPerIf);
         int accepted = 0;
         if (simulated > 0 && receiver != null) {
             int committed = receiver.receive(simulated, false);
@@ -183,6 +190,7 @@ public class ChargingEffect implements ChargingSkillEffect {
         // Proficiency is settled per effective accepted tick, never for rejected receives.
         OVERLOAD_FLOORS.remove(player.getUUID());
         ITEM_MODES.remove(player.getUUID());
+        OUTPUTS.remove(player.getUUID());
     }
 
     @Override
@@ -196,6 +204,7 @@ public class ChargingEffect implements ChargingSkillEffect {
     public void onChargingAbort(ServerPlayer player, PlayerAbilityData data) {
         OVERLOAD_FLOORS.remove(player.getUUID());
         ITEM_MODES.remove(player.getUUID());
+        OUTPUTS.remove(player.getUUID());
     }
 
     @Override

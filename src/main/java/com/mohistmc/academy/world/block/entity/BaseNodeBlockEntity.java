@@ -36,6 +36,8 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     private UUID ownerUUID = null;
     /** Client-side mirror of the runtime network membership flag. */
     private boolean clientConnected = false;
+    private long configRevision;
+    private boolean clientPasswordConfigured;
 
     public BaseNodeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -173,6 +175,7 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
 
     public boolean setNodeName(String name) {
         if (!NetworkInputLimits.validRequired(name, NetworkInputLimits.NODE_NAME)) return false;
+        if (!name.equals(this.nodeName)) advanceConfigRevision();
         this.nodeName = name;
         setChanged();
         if (level != null && !level.isClientSide()) {
@@ -182,7 +185,9 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     }
     public void setPassword(String password) {
         if (password == null || password.length() > 64) return;
+        if (!password.equals(this.password)) advanceConfigRevision();
         this.password = password;
+        clientPasswordConfigured = !password.isEmpty();
         setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -190,6 +195,14 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     }
     public void setMaxEnergy(double maxEnergy) { this.maxEnergy = boundedFinite(maxEnergy, DEFAULT_MAX_ENERGY, 1_000_000_000); energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(energy, this.maxEnergy); setChanged(); updateEnergyModel(); }
     public void setBandwidth(double bandwidth) { this.bandwidth = boundedFinite(bandwidth, DEFAULT_BANDWIDTH, 1_000_000); setChanged(); }
+
+    public long getConfigRevision() { return configRevision; }
+    public boolean hasPasswordConfigured() {
+        return level != null && level.isClientSide() ? clientPasswordConfigured : !password.isEmpty();
+    }
+    private void advanceConfigRevision() {
+        if ((level == null || !level.isClientSide()) && configRevision < Long.MAX_VALUE) configRevision++;
+    }
 
     // ==================== Owner ====================
 
@@ -231,18 +244,28 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
         if (tag.contains("node_energy")) energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(tag.getDouble("node_energy"), maxEnergy);
         else if (tag.contains("energy")) energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(tag.getDouble("energy"), maxEnergy);
         if (tag.contains("node_bandwidth")) bandwidth = boundedFinite(tag.getDouble("node_bandwidth"), DEFAULT_BANDWIDTH, 1_000_000);
-        String loadedName = tag.contains("node_name") ? tag.getString("node_name")
-                : tag.contains("nodeName") ? tag.getString("nodeName") : DEFAULT_NODE_NAME;
-        // 0.0.15 and the original tile could persist names longer than the
-        // current network field.  Loading is a migration boundary: preserve
-        // the usable prefix instead of turning the whole saved identity into
-        // Unnamed. New C2S edits remain strictly bounded and are never silently
-        // truncated.
-        loadedName = bounded(loadedName, NetworkInputLimits.NODE_NAME);
-        nodeName = NetworkInputLimits.validRequired(loadedName, NetworkInputLimits.NODE_NAME)
-                ? loadedName : DEFAULT_NODE_NAME;
-        if (tag.contains("node_pass")) password = bounded(tag.getString("node_pass"), NetworkInputLimits.PASSWORD);
-        else if (tag.contains("password")) password = bounded(tag.getString("password"), NetworkInputLimits.PASSWORD);
+        long loadedRevision = Math.max(0L, tag.getLong("node_config_revision"));
+        // Public BE updates can arrive after a newer menu/ack snapshot. Ignore
+        // older configuration while still applying unrelated energy/inventory data.
+        boolean acceptConfig = level == null || !level.isClientSide()
+                || !tag.getBoolean("node_public_config") || loadedRevision >= configRevision;
+        if (acceptConfig) {
+            String loadedName = tag.contains("node_name") ? tag.getString("node_name")
+                    : tag.contains("nodeName") ? tag.getString("nodeName") : DEFAULT_NODE_NAME;
+            // 0.0.15 and the original tile could persist names longer than the
+            // current network field.  Loading is a migration boundary: preserve
+            // the usable prefix instead of turning the whole saved identity into
+            // Unnamed. New C2S edits remain strictly bounded and are never silently
+            // truncated.
+            loadedName = bounded(loadedName, NetworkInputLimits.NODE_NAME);
+            nodeName = NetworkInputLimits.validRequired(loadedName, NetworkInputLimits.NODE_NAME)
+                    ? loadedName : DEFAULT_NODE_NAME;
+            if (tag.contains("node_pass")) password = bounded(tag.getString("node_pass"), NetworkInputLimits.PASSWORD);
+            else if (tag.contains("password")) password = bounded(tag.getString("password"), NetworkInputLimits.PASSWORD);
+            configRevision = loadedRevision;
+            clientPasswordConfigured = tag.contains("node_has_password")
+                    ? tag.getBoolean("node_has_password") : !password.isEmpty();
+        }
         if (tag.contains("ownerUUID")) ownerUUID = parseUuid(tag.getString("ownerUUID"));
         if (tag.contains("node_connected")) clientConnected = tag.getBoolean("node_connected");
     }
@@ -259,6 +282,7 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
         tag.putDouble("node_bandwidth", bandwidth);
         tag.putString("node_name", nodeName);
         tag.putString("node_pass", password);
+        tag.putLong("node_config_revision", configRevision);
         if (ownerUUID != null) tag.putString("ownerUUID", ownerUUID.toString());
     }
 
@@ -275,6 +299,9 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
         tag.putDouble("node_maxEnergy", maxEnergy);
         tag.putDouble("node_bandwidth", bandwidth);
         tag.putString("node_name", nodeName);
+        tag.putBoolean("node_public_config", true);
+        tag.putLong("node_config_revision", configRevision);
+        tag.putBoolean("node_has_password", !password.isEmpty());
         if (ownerUUID != null) tag.putString("ownerUUID", ownerUUID.toString());
         if (level instanceof net.minecraft.server.level.ServerLevel server) {
             tag.putBoolean("node_connected", WirelessSystem.getNetwork(server, this) != null);

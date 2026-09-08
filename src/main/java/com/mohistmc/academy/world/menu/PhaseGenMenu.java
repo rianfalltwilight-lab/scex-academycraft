@@ -24,19 +24,19 @@ public class PhaseGenMenu extends AcademyMenu {
             };
         } else machineData = new SimpleContainerData(4);
         addDataSlots(machineData);
-        addAcademySlot(new Slot(container, 0, 45, 12) {
+        addAcademySlot(new Slot(container, 0, 47, 12) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return item.is(AcademyItems.MATTER_UNIT_PHASE_LIQUID.get());
             }
         });
-        addAcademySlot(new Slot(container, 1, 112, 51) {
+        addAcademySlot(new Slot(container, 1, 114, 51) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return false;
             }
         });
-        addAcademySlot(new Slot(container, 2, 42, 80) {
+        addAcademySlot(new Slot(container, 2, 44, 80) {
             @Override public boolean mayPlace(ItemStack item) {
                 return com.mohistmc.academy.capability.EnergyItemHelper.isEnergyItem(item);
             }

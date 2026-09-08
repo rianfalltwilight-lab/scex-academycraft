@@ -1,0 +1,547 @@
+{
+  "repository": "https://github.com/NullaDev/ExtraAcC-1.12.2-",
+  "commit": "d66a190e3ae00d9ca8c154b47fca0509d4c171f7",
+  "licenseStatus": "No LICENSE file or README license grant at this fixed snapshot; this provenance does not grant or relicense the assets.",
+  "scope": "25 registered add-on items, seven alternate state models, two induction factors, and eight worn armor layers. No copied Java implementation. PNG files are byte-identical to the user-specified upstream.",
+  "assets": [
+    {
+      "source": "assets/exac/textures/items/air_jet.png",
+      "destination": "assets/academy/textures/item/extraacc/air_jet.png",
+      "sha256": "768D0CF9F51AA0D1B62AE4BC4E80CF7DD5923CC8A7A5846EFA0FC906F4D52373",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/avalon.png",
+      "destination": "assets/academy/textures/item/extraacc/avalon.png",
+      "sha256": "CE299851760CF6E7B369F86DF8B786CB9757DA406E7376C8105AB4DD6345DDB2",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/cp_potion.png",
+      "destination": "assets/academy/textures/item/extraacc/cp_potion.png",
+      "sha256": "8B90ABD8693BBADF5567E3854C26D489DB23636E7CBD5CAF11DEEA49E44777F1",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/drop_item_magnet.png",
+      "destination": "assets/academy/textures/item/extraacc/drop_item_magnet.png",
+      "sha256": "A4CD6C9E6CF66002699A6BC5240DD493ABF5BBADF8CA26ADEEA66D5C3E42A80C",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "source": "assets/exac/textures/items/electricalibur.png",
+      "destination": "assets/academy/textures/item/extraacc/electricalibur.png",
+      "sha256": "3E9179D46B81450FD05B02EDFFD90052587E6A785138C95A200BA8D76FC36CFA",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_0.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_0.png",
+      "sha256": "051E87A6F67FC484578E3C3DCC1E1BA1A40CAEA106DD0437B56F1C4BA8192F42",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_1.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_1.png",
+      "sha256": "CB32979F437C1E0BD509BC7C6E8EEF0F625A2B113B9EE03166C207FF4F80FCB5",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_2.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_2.png",
+      "sha256": "C1DA7585AC02247F7589ACDF9C6DD7A46A7781509B90B486648AEE115F88C19C",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_3.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_3.png",
+      "sha256": "E1EA879DC76002036775D1D85430D59427D313BEB8AEC48B1D86C9BD15CBC1D5",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_4.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_4.png",
+      "sha256": "EF2B548A3CE091556EC63CB3E614BD3398F8E07BDEB32CC4D5B3FD9444ABB1FA",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/energy_unit_group_5.png",
+      "destination": "assets/academy/textures/item/extraacc/energy_unit_group_5.png",
+      "sha256": "8EB62926ADC436A02C9B2F75002F560D27285ECE177D4383BE0102057A3888F1",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/etched_cobblestone.png",
+      "destination": "assets/academy/textures/item/extraacc/etched_cobblestone.png",
+      "sha256": "FA5CB259285047970B486AB1CBA1F8E376933ED62A0804B9415158DE1B7409D3",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/factor_aerohand.png",
+      "destination": "assets/academy/textures/item/factor_aerohand.png",
+      "sha256": "8F564347BA8A8D7B0114C30D34470D63DD3670036DD16272C7B69C5F2E504845",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/factor_telekinesis.png",
+      "destination": "assets/academy/textures/item/factor_telekinesis.png",
+      "sha256": "8D4F155C613C214B7FCCB48BAA8E2F3D280D568799BE1816E73802302492D16A",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/imag_boots.png",
+      "destination": "assets/academy/textures/item/extraacc/imag_boots.png",
+      "sha256": "C7398C1680409128C2BA6FDB47AB344E92577D941114CC22D81606B169AD4717",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/imag_chestplate.png",
+      "destination": "assets/academy/textures/item/extraacc/imag_chestplate.png",
+      "sha256": "C7D2BAFB1B36FFEE9655318ACD02915FD45CB401BC5DA144A18BE01E0DDAA4FF",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/imag_helmet.png",
+      "destination": "assets/academy/textures/item/extraacc/imag_helmet.png",
+      "sha256": "66F3DEC9A101C818C397755BF987DA239753D94AC15212B0BB78BF9F7F62CD34",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/imag_leggings.png",
+      "destination": "assets/academy/textures/item/extraacc/imag_leggings.png",
+      "sha256": "21A76400179A6347EC71AAB28F8FADF4194DDC171BE1F06153777C15BA107CCF",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/lasor_component.png",
+      "destination": "assets/academy/textures/item/extraacc/lasor_component.png",
+      "sha256": "DB27B0D721901F57BA48F3805EC0F2CF4762AEACAFC44FFFA5196C3EFABCEC68",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "source": "assets/exac/textures/items/lasor_gun.png",
+      "destination": "assets/academy/textures/item/extraacc/lasor_gun.png",
+      "sha256": "3BB13F41D7CB7A31E9C3C367F8B92B60A36FFA33AE84AF5F3EDCF9106365CF51",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/optical_chip.png",
+      "destination": "assets/academy/textures/item/extraacc/optical_chip.png",
+      "sha256": "F53CF22A537770CD3680A5A96AC5621B7F36B41BE759AD504D86D4A887D80381",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/paper_boots.png",
+      "destination": "assets/academy/textures/item/extraacc/paper_boots.png",
+      "sha256": "CABAD599D7ACF69C01F687A5F160D7707F1CA7883D1BBE782D98D85B247853ED",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/paper_chestplate.png",
+      "destination": "assets/academy/textures/item/extraacc/paper_chestplate.png",
+      "sha256": "EEE29C9E7B052407F05B9D5EC06F6CA31718A27E9832CF7B1694553AFED744A5",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/paper_helmet.png",
+      "destination": "assets/academy/textures/item/extraacc/paper_helmet.png",
+      "sha256": "CBD2D39018702969FE5D19B739E5B7A28CD0D62FACDDF8797CD322A9D70C30AB",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/paper_leggings.png",
+      "destination": "assets/academy/textures/item/extraacc/paper_leggings.png",
+      "sha256": "64254CB8B2023525F20F9F14F9981F9067B16C12412FAD7B25BC08A4754478A2",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/paper_plane.png",
+      "destination": "assets/academy/textures/item/extraacc/paper_plane.png",
+      "sha256": "D73CE84964DFD873E98A395402551EFD2CBAB06FF1EF74B7E81BE4C58F6CD411",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/ray_twister_active.png",
+      "destination": "assets/academy/textures/item/extraacc/ray_twister_active.png",
+      "sha256": "C2F0A729E73149CDF54D6890E511FBF2D00E3CB05EB9F274FE6D76386CB4C423",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/ray_twister.png",
+      "destination": "assets/academy/textures/item/extraacc/ray_twister.png",
+      "sha256": "0070E73AD3A608A621E259EE4D86A2E8FEF94BB2D1C80F317D43864774C94841",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/reso_boots.png",
+      "destination": "assets/academy/textures/item/extraacc/reso_boots.png",
+      "sha256": "4B39819A20C2011B2BCF75D31F5ADC9885E87B3B221F74C85F634ABE403B5357",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/reso_chestplate.png",
+      "destination": "assets/academy/textures/item/extraacc/reso_chestplate.png",
+      "sha256": "C0C243A935123749E28E18A6157D2CA6B0939CD523D99379DA8C3A91C70FAC60",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/reso_helmet.png",
+      "destination": "assets/academy/textures/item/extraacc/reso_helmet.png",
+      "sha256": "7280C4462A256AB8D0B4036233DFAF2AE9533F2F8A2A9D96D0E8069E3B25B5B8",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/reso_leggings.png",
+      "destination": "assets/academy/textures/item/extraacc/reso_leggings.png",
+      "sha256": "DA2458FB03CD4479E6136A07979E6AC1A08C7B11E6C92AE10D55453CAB14252A",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "source": "assets/exac/textures/items/teleporter_pos.png",
+      "destination": "assets/academy/textures/item/extraacc/teleporter_pos.png",
+      "sha256": "5C156945E2203AAECD8F16723451BDC07A7AC23779FD9C130FC55D4F0D41FB7C",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/items/teleporter.png",
+      "destination": "assets/academy/textures/item/extraacc/teleporter.png",
+      "sha256": "1915402CF413D56ED1D5E3E3C0C1026949C8636C0DC7787B5636EC62288254DB",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/energy_layer_1.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/energy_layer_1.png",
+      "sha256": "110B6D8AC726F41CF48B6C7FCE633A1B5DB02585BAD5304DBB93BB1CAAD7874D",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/energy_layer_2.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/energy_layer_2.png",
+      "sha256": "95055FD835F77C79798C1CC98C2E7CF3B814D0DB7D41EF3A85998FA683C4471D",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/noenergy_layer_1.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/noenergy_layer_1.png",
+      "sha256": "7EF594E7FD171C013E7C34026A24E71117A4618D8053B886EAFB962377E8F308",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/noenergy_layer_2.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/noenergy_layer_2.png",
+      "sha256": "1C8B86D7FFC5462018E939C592A73ABB86114338D1E640E33B559E9FB0430E65",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/paper_layer_1.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/paper_layer_1.png",
+      "sha256": "AD61CCACE1169D14654B76F86C4CEFFBB6545FC72197712723C673495508010C",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/paper_layer_2.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/paper_layer_2.png",
+      "sha256": "B13033B28DB6AEEE6671DB702973CA5FE01DADC6530BAEE5E16D684C86C3BD3C",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/reso_layer_1.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/reso_layer_1.png",
+      "sha256": "DAA51A29887167D6515F3C4A37BC32D789CE48A88E763DAE93A49E06D8AB5C7F",
+      "width": 64,
+      "height": 32
+    },
+    {
+      "source": "assets/exac/textures/models/armor/reso_layer_2.png",
+      "destination": "assets/academy/textures/models/armor/extraacc/reso_layer_2.png",
+      "sha256": "F52B2CE6BBCB5CE57531BCA88CB688FB4E5E7BD071C5F290E5DD9774DD5CB7B2",
+      "width": 64,
+      "height": 32
+    }
+  ],
+  "adaptedModels": [
+    {
+      "source": "assets/exac/models/item/air_jet.json",
+      "sourceSha256": "68BBBE694C88208353F2302B0F257E50A93E9AB0ADB5E08A6C96FFCE1442D24B",
+      "destination": "assets/academy/models/item/air_jet.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/air_jet"
+    },
+    {
+      "source": "assets/exac/models/item/avalon.json",
+      "sourceSha256": "48FE8B32E27B495B19B8AA9D447F89F0DAF46BBFE13F1CFE62DE2C331E124332",
+      "destination": "assets/academy/models/item/avalon.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/avalon"
+    },
+    {
+      "source": "assets/exac/models/item/cp_potion.json",
+      "sourceSha256": "5A6B160F9E36B4F9870B7408C52CA03D82AD4B7F0518F5A2978092616E7ED4FA",
+      "destination": "assets/academy/models/item/cp_potion.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/cp_potion"
+    },
+    {
+      "source": "assets/exac/models/item/drop_item_magnet.json",
+      "sourceSha256": "54CCE6AC42493A610A995F22778FD7D5ACB0EAACBBAB452062AD893FE3788CDF",
+      "destination": "assets/academy/models/item/drop_item_magnet.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/drop_item_magnet"
+    },
+    {
+      "source": "assets/exac/models/item/electricalibur.json",
+      "sourceSha256": "74B3A108071CF072C7EFC2995F373D0659FF67FC054A36D358BD6F26FBBD47A5",
+      "destination": "assets/academy/models/item/electricalibur.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/electricalibur"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_0.json",
+      "sourceSha256": "2D8E5F311FCA5179D122BF02AE547726E8612818F931FCB6E021043AFB670763",
+      "destination": "assets/academy/models/item/energy_unit_group.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_0"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_1.json",
+      "sourceSha256": "07FE6D3BB61736EDA3EEF9F315F99C54E0BFE31AC32F462BF8DCE436A5839789",
+      "destination": "assets/academy/models/item/energy_unit_group_1.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_1"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_2.json",
+      "sourceSha256": "354C958EE2DA880E047AF64988FC029101383B1C0213B2FBDA34602FAB3981EE",
+      "destination": "assets/academy/models/item/energy_unit_group_2.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_2"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_3.json",
+      "sourceSha256": "5EAC6470D8FCA7DD8DF0A20AE302582A4155925FA700F6BE45741976D30ED567",
+      "destination": "assets/academy/models/item/energy_unit_group_3.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_3"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_4.json",
+      "sourceSha256": "EFECE980537A5C1642B467B12400BFAFCF5847C9E6299A219D33469700D830CF",
+      "destination": "assets/academy/models/item/energy_unit_group_4.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_4"
+    },
+    {
+      "source": "assets/exac/models/item/energy_unit_group_5.json",
+      "sourceSha256": "50689DF6710D4290CFD92BA855B72724E6A53FFE86396731923F08845B0CF7BD",
+      "destination": "assets/academy/models/item/energy_unit_group_5.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/energy_unit_group_5"
+    },
+    {
+      "source": "assets/exac/models/item/etched_cobblestone.json",
+      "sourceSha256": "E75F33E6D16CE636483999768050871D0165C3F90436E8E11CCC270B2EE71034",
+      "destination": "assets/academy/models/item/etched_cobblestone.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/etched_cobblestone"
+    },
+    {
+      "source": "assets/exac/models/item/factor_aerohand.json",
+      "sourceSha256": "F8CC97FAE1C62BD09014AF698B6EE93CC4D44AF694637BC4D6EB97A1D3ADEAED",
+      "destination": "assets/academy/models/item/factor_aerohand.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/factor_aerohand"
+    },
+    {
+      "source": "assets/exac/models/item/factor_telekinesis.json",
+      "sourceSha256": "02E129A586DE144474FF7329D286EDA0400E83F97461BCCDA68D5754B000712C",
+      "destination": "assets/academy/models/item/factor_telekinesis.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/factor_telekinesis"
+    },
+    {
+      "source": "assets/exac/models/item/imag_boots.json",
+      "sourceSha256": "B79943E0B830487C1A1FB217E069BCDF1178E5C994E249B7CBE92BB532904B86",
+      "destination": "assets/academy/models/item/imag_boots.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/imag_boots"
+    },
+    {
+      "source": "assets/exac/models/item/imag_chestplate.json",
+      "sourceSha256": "B703B8545BFC3F7C2CF5AF0B7826393CD7220351B0775988A45B47AB1C86FA0C",
+      "destination": "assets/academy/models/item/imag_chestplate.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/imag_chestplate"
+    },
+    {
+      "source": "assets/exac/models/item/imag_helmet.json",
+      "sourceSha256": "7DCEB724FA6BAE8FC670AE2C72FAAF5DE62867A6D23161939782582D4E8D2393",
+      "destination": "assets/academy/models/item/imag_helmet.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/imag_helmet"
+    },
+    {
+      "source": "assets/exac/models/item/imag_leggings.json",
+      "sourceSha256": "A0A6D6E707E883A7B3999583E62FC4300D951380C9A080260E826105159D15CE",
+      "destination": "assets/academy/models/item/imag_leggings.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/imag_leggings"
+    },
+    {
+      "source": "assets/exac/models/item/lasor_component.json",
+      "sourceSha256": "0B1E082535B45660C7C4B7EAAC4A5A30D221A6C770E1F30895C9B7B85DBF730B",
+      "destination": "assets/academy/models/item/lasor_component.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/lasor_component"
+    },
+    {
+      "source": "assets/exac/models/item/lasor_gun.json",
+      "sourceSha256": "767D93EE52498C9BB1D486E4CE87A13229E75D110FCF8FE62DA9A49C171B633E",
+      "destination": "assets/academy/models/item/lasor_gun.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/lasor_gun"
+    },
+    {
+      "source": "assets/exac/models/item/optical_chip.json",
+      "sourceSha256": "4F1C4A466CB044FBCB9F6D94113E5AD8651A398CE5489A5D34834811BA2AC760",
+      "destination": "assets/academy/models/item/optical_chip.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/optical_chip"
+    },
+    {
+      "source": "assets/exac/models/item/paper_boots.json",
+      "sourceSha256": "13CEE41626E0DF9E9F91FE0F19787370EA6DCC785CF906ACCE8F4F81CA2628FD",
+      "destination": "assets/academy/models/item/paper_boots.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/paper_boots"
+    },
+    {
+      "source": "assets/exac/models/item/paper_chestplate.json",
+      "sourceSha256": "BB7C0D8340DC0030B10B2701C197CCB01535712D71E4268CE36386BB7CC2E8E0",
+      "destination": "assets/academy/models/item/paper_chestplate.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/paper_chestplate"
+    },
+    {
+      "source": "assets/exac/models/item/paper_helmet.json",
+      "sourceSha256": "7C9DB5519C9B569F14F3D99D4D34397E7B535C72B8AFFEB90F83212C3EAC526D",
+      "destination": "assets/academy/models/item/paper_helmet.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/paper_helmet"
+    },
+    {
+      "source": "assets/exac/models/item/paper_leggings.json",
+      "sourceSha256": "2D021C17595998E238A0AEFCB281D558597F694C56648496B1D43CDBC4C8CF24",
+      "destination": "assets/academy/models/item/paper_leggings.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/paper_leggings"
+    },
+    {
+      "source": "assets/exac/models/item/paper_plane.json",
+      "sourceSha256": "060EDB9CE471AFDE720F10824A182060B6822469CDA73057B721B763CBFEC5B1",
+      "destination": "assets/academy/models/item/paper_plane.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/paper_plane"
+    },
+    {
+      "source": "assets/exac/models/item/ray_twister_active.json",
+      "sourceSha256": "728546D98547C74D5B1FAA0BE4BDA4EECBF57B5FCBF202CCA9ADC845C849F703",
+      "destination": "assets/academy/models/item/ray_twister_active.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/ray_twister_active"
+    },
+    {
+      "source": "assets/exac/models/item/ray_twister.json",
+      "sourceSha256": "FC5012CAD9CCCE0B5F868E8E02E0C0048B20F43F898A6238CFB05BC14341903B",
+      "destination": "assets/academy/models/item/ray_twister.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/ray_twister"
+    },
+    {
+      "source": "assets/exac/models/item/reso_boots.json",
+      "sourceSha256": "1D7A739143F0801E64DB105AE4178243ED7A20D137C03E01F09B117432AD1686",
+      "destination": "assets/academy/models/item/reso_boots.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/reso_boots"
+    },
+    {
+      "source": "assets/exac/models/item/reso_chestplate.json",
+      "sourceSha256": "FE3AD4BE13AC060A9891813E3A0F03F016C51454D8B7552233EA226F387520F2",
+      "destination": "assets/academy/models/item/reso_chestplate.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/reso_chestplate"
+    },
+    {
+      "source": "assets/exac/models/item/reso_helmet.json",
+      "sourceSha256": "93428656D44D80FDBB1568DE602C98B9E907BDD7E17DD2059EBBF7D9853225F6",
+      "destination": "assets/academy/models/item/reso_helmet.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/reso_helmet"
+    },
+    {
+      "source": "assets/exac/models/item/reso_leggings.json",
+      "sourceSha256": "E8C183E2E646B2A12D1D9FE55618CD2C6A38735EB6D03431D38D66855A620980",
+      "destination": "assets/academy/models/item/reso_leggings.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/reso_leggings"
+    },
+    {
+      "source": "assets/exac/models/item/teleporter_pos.json",
+      "sourceSha256": "E4EAD66056D3314F189C8CA71F414733843648452D6985BB65F8ECACBEA3DD16",
+      "destination": "assets/academy/models/item/teleporter_bound.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/teleporter_pos"
+    },
+    {
+      "source": "assets/exac/models/item/teleporter.json",
+      "sourceSha256": "3315BE095D87C1EC3BF1354C81B6DCDF13C69CE216D9212050BACFA8C843E4E5",
+      "destination": "assets/academy/models/item/teleporter.json",
+      "adaptation": "1.21.1 texture namespace/path; original display transforms retained; existing state predicates retained",
+      "texture": "academy:item/extraacc/teleporter"
+    }
+  ],
+  "unusedUpstreamArtNotImported": [
+    "electricalibur_and_avalon.png",
+    "entities/waterman.png",
+    "particles/particle.png"
+  ]
+}

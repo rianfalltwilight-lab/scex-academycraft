@@ -18,6 +18,16 @@ public final class ImagEnergyArmorItem extends ArmorItem implements IEnergyItem 
                 .stacksTo(1));
     }
 
+    /** The add-on changes the worn shell at 500 IF; inventory icons remain constant. */
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack,
+            net.minecraft.world.entity.Entity entity, net.minecraft.world.entity.EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String state = getEnergyStored(stack) >= 500 ? "energy" : "noenergy";
+        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("academy",
+                "textures/models/armor/extraacc/" + state + "_layer_" + (innerModel ? 2 : 1) + ".png");
+    }
+
     @Override public int getEnergyStored(ItemStack stack) {
         return ExtraItemData.energy(stack, MAX_ENERGY);
     }

@@ -1,1 +1,6 @@
-{"parent":"minecraft:item/generated","textures":{"layer0":"minecraft:item/netherite_leggings"}}
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "academy:item/extraacc/imag_leggings"
+  }
+}

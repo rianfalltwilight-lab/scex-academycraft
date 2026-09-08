@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class WirelessMachineUiContractTest {
-    private static String source(String p) throws Exception { return Files.readString(Path.of("src/main/java").resolve(p)); }
+    private static String source(String p) throws Exception { return Files.readString(Path.of("src/main/java").resolve(p)).replace("\r\n", "\n"); }
 
     @Test void emptyNodeResponseIsDistinctFromLoadingAndExplained() throws Exception {
         String ui = source("com/mohistmc/academy/client/gui/AcademyBaseUI.java");

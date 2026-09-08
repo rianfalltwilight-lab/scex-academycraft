@@ -25,6 +25,12 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     private boolean nodeInputInitialized;
     private boolean nodeNameEdited;
     private boolean passwordEdited;
+    private com.mohistmc.academy.network.MenuActionToken pendingNameToken;
+    private com.mohistmc.academy.network.MenuActionToken pendingPasswordToken;
+    private String pendingNameValue;
+    private String pendingPasswordValue;
+    private boolean saveRejected;
+    private boolean saveWaitingForSession;
     private EditFocus editFocus = EditFocus.NONE;
     private int infoPanelX = Integer.MIN_VALUE;
     private float nameRowY;
@@ -93,7 +99,8 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
         initializeNodeInput();
         String name = nodeNameInput + (editFocus == EditFocus.NAME ? "▌" : "");
         String password = passwordEdited ? "*".repeat(nodePasswordInput.length())
-                + (editFocus == EditFocus.PASSWORD ? "▌" : "") : "点击修改";
+                + (editFocus == EditFocus.PASSWORD ? "▌" : "")
+                : menu.hasPasswordConfigured() ? "已设置（修改）" : "公开（未设）";
         InfoArea info = new InfoArea()
                 .histogram(
                         InfoArea.histEnergy(menu.getNodeEnergy(), menu.getNodeMaxEnergy()),
@@ -106,6 +113,9 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
         nameRowY = info.lastElementY();
         info.property("密码", menu.canEditNode() ? password : "仅所有者可改");
         passwordRowY = info.lastElementY();
+        if (pendingNameToken != null || pendingPasswordToken != null) info.property("状态", "保存中…");
+        else if (saveRejected) info.property("状态", "保存被拒绝");
+        else if (saveWaitingForSession) info.property("状态", "同步中，请回车");
         infoPanelX = InfoArea.resolvePanelX(this.leftPos);
         info.draw(graphics, this.leftPos, this.topPos);
     }
@@ -191,24 +201,54 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     }
 
     private boolean submitNodeConfig() {
-        if (!menu.actionSessionReady() || !menu.canEditNode() || menu.pos == null) return false;
+        if (!menu.actionSessionReady()) { saveWaitingForSession = true; return false; }
+        if (!menu.canEditNode() || menu.pos == null) { saveRejected = true; return false; }
+        saveWaitingForSession = false;
         boolean nameEdit = editFocus == EditFocus.NAME;
         if (nameEdit && !NetworkInputLimits.validRequired(nodeNameInput.toString(), NetworkInputLimits.NODE_NAME)) {
             return false;
         }
         // Commit only the property the viewer confirms. A password edit from
         // another open menu must not overwrite a newer name with its opening snapshot.
-        PacketDistributor.sendToServer(new NodeConfigPacket(menu.nextActionToken(), menu.pos,
+        var token = menu.nextActionToken();
+        saveRejected = false;
+        if (nameEdit) {
+            pendingNameToken = token;
+            pendingNameValue = nodeNameInput.toString();
+        } else {
+            pendingPasswordToken = token;
+            pendingPasswordValue = nodePasswordInput.toString();
+        }
+        PacketDistributor.sendToServer(new NodeConfigPacket(token, menu.pos,
                 nameEdit ? java.util.Optional.of(nodeNameInput.toString()) : java.util.Optional.empty(),
                 nameEdit ? java.util.Optional.empty() : java.util.Optional.of(nodePasswordInput.toString())));
-        if (nameEdit) {
-            nodeNameEdited = false;
-        } else {
-            passwordEdited = false;
-            nodePasswordInput.setLength(0);
-        }
+        // Keep this field's draft until the server confirms this exact action.
+        // Clearing it here lets an old BE mirror replace the new text with Unnamed.
         return true;
     }
+    /** Called only on the current connection, screen and container by ClientPacketBridge. */
+    public final void acceptNodeConfigResult(com.mohistmc.academy.network.NodeConfigResultPacket result) {
+        if (!result.pos().equals(menu.pos)) return;
+        boolean nameReply = result.actionToken().equals(pendingNameToken);
+        boolean passwordReply = result.actionToken().equals(pendingPasswordToken);
+        if (!nameReply && !passwordReply) return;
+        menu.acceptServerConfig(result.name(), result.passwordConfigured(), result.revision());
+        saveRejected = !result.accepted();
+        if (nameReply) {
+            if (result.accepted() && nodeNameInput.toString().equals(pendingNameValue)) nodeNameEdited = false;
+            pendingNameToken = null;
+            pendingNameValue = null;
+        }
+        if (passwordReply) {
+            if (result.accepted() && nodePasswordInput.toString().equals(pendingPasswordValue)) {
+                passwordEdited = false;
+                nodePasswordInput.setLength(0);
+            }
+            pendingPasswordToken = null;
+            pendingPasswordValue = null;
+        }
+    }
+
     /** Real-client gate hook: edit and submit through the production input handlers. */
     public final boolean renameNodeForVisualGate(String name) {
         return draftNodeNameForVisualGate(name) && keyPressed(257, 0, 0);

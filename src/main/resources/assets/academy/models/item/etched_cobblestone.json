@@ -1,1 +1,6 @@
-{"parent":"minecraft:block/cobblestone"}
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "academy:item/extraacc/etched_cobblestone"
+  }
+}

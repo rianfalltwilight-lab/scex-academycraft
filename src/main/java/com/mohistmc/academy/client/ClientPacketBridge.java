@@ -55,6 +55,13 @@ public final class ClientPacketBridge {
     public static void locationTeleport(LocationTeleportSyncPacket p) { LocationTeleportGui.accept(p.locations()); }
     public static void locationConsent(LocationConsentRequestPacket p) { Minecraft.getInstance().setScreen(new com.mohistmc.academy.client.gui.LocationConsentScreen(p)); }
     public static void freqTransmitter(FreqTransmitterStatePacket p) { FreqTransmitterGui.acceptServerState(p); }
+    public static void nodeConfigResult(NodeConfigResultPacket packet, net.minecraft.network.Connection sourceConnection) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.getConnection() == null || mc.getConnection().getConnection() != sourceConnection
+                || mc.player == null) return;
+        if (mc.screen instanceof com.mohistmc.academy.client.block.gui.BaseNodeGui<?> gui
+                && mc.player.containerMenu == gui.getMenu()) gui.acceptNodeConfigResult(packet);
+    }
     public static void nodeList(NodeListSyncPacket p) { AcademyBaseUI.receiveNodeList(p.data()); }
     public static void matrixNetworkList(MatrixNetworkListSyncPacket p) {
         AcademyBaseUI.receiveMatrixNetworkList(p.data());

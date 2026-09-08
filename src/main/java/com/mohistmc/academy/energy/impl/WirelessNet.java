@@ -283,7 +283,9 @@ public class WirelessNet {
         nodes.removeAll(toRemoveNodes);
         toRemoveNodes.clear();
 
-        double percent = EnergyBoundary.finiteRatio(sum, maxSum);
+        // Buffered energy remains available even when every node has drained.
+        double percent = EnergyBoundary.finiteRatio(
+                EnergyBoundary.saturatedAdd(sum, buffer, EnergyBoundary.MAX_NETWORK_ENERGY), maxSum);
         double transferLeft = EnergyBoundary.transfer(imat.getBandwidth());
 
         for (VWNode vn : nodes) {
@@ -299,14 +301,12 @@ public class WirelessNet {
                     Math.min(transferLeft, EnergyBoundary.transfer(node.getBandwidth())));
             if (!Double.isFinite(delta)) delta = 0;
 
-            if (buffer + delta > BUFFER_MAX) {
-                delta = BUFFER_MAX - buffer;
-            } else if (buffer + delta < 0) {
-                delta = -buffer;
-            }
+            // Positive delta fills the node and drains the shared buffer.
+            // Negative delta charges the buffer; neither side may mint energy.
+            delta = Math.clamp(delta, buffer - BUFFER_MAX, buffer);
 
             transferLeft -= Math.abs(delta);
-            buffer = EnergyBoundary.bounded(buffer + delta, BUFFER_MAX);
+            buffer = EnergyBoundary.bounded(buffer - delta, BUFFER_MAX);
             node.setEnergy(cur + delta);
 
             if (transferLeft == 0) break;

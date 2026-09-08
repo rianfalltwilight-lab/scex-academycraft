@@ -65,8 +65,8 @@ class ItemTextureResourceContractTest {
 
             BufferedImage image = ImageIO.read(ITEM_TEXTURES.resolve("factor_" + category + ".png").toFile());
             assertTrue(image != null, () -> "unreadable factor texture: " + category);
-            assertEquals(64, image.getWidth(), () -> "category icon width changed: " + category);
-            assertEquals(64, image.getHeight(), () -> "category icon height changed: " + category);
+            assertEquals(32, image.getWidth(), () -> "original factor icon width changed: " + category);
+            assertEquals(32, image.getHeight(), () -> "original factor icon height changed: " + category);
             assertTrue(countVisibleColors(image) > 16,
                     () -> category + " factor was replaced by a low-detail placeholder texture");
         }

@@ -1,5 +1,7 @@
 # SCEX AcademyCraft 1.21.1
 
+**[0.0.22-scex-wireless：直接下载运行 JAR / Download JAR](https://github.com/rianfalltwilight-lab/scex-academycraft/releases/download/v0.0.22-scex-wireless/AcademyCraft-neoforge-1.21.1-0.0.22-scex-wireless.jar)** · [更新说明 / Release notes](docs/releases/0.0.22-scex-wireless.md)
+
 > 本仓库由 **Space Creator EX（SCEX）服务器**维护。Minecraft 1.21.1 / NeoForge 重建、测试和公开版整理主要由 **OpenAI Codex** 在维护者监督下完成，是明确标注的 AI / Vibe Coding 项目。详见 [AI 参与开发声明](AI-GENERATED.md)。
 
 这是 AcademyCraft 的 SCEX 非官方维护与重建版本，目标是在 Minecraft 1.21.1 + NeoForge 上恢复 1.12.2 最终可玩版本的超能力、机器、无线能源网络、终端、UI 与表现。
@@ -11,11 +13,11 @@
 
 ## 当前状态
 
-当前开发版本为 **0.0.19**，针对 0.0.18 的网络会话、伤害扣费和生命周期边界追加复核。客户端与服务端使用 v14 协议，必须同步更换。本版将防御结算移至伤害通过公开取消、盾牌和无敌帧检查后，并在最终确认死亡后清理技能。Mixin 只针对 **NeoForge 21.1.248** 验证，加载范围锁定该版本。逐项证据与限制见 [0.0.19 验收说明](docs/ACCEPTANCE-0.0.19.md)。
+当前开发版本为 **0.0.22-scex-wireless**。矩阵传能守恒、槽位对齐、无线输入和矩阵朝向已修复。客户端与服务端同步使用协议 v15/data-v4；NeoForge 精确锁定 21.1.248。详见 [本版更新与验证](docs/releases/0.0.22-scex-wireless.md)。
 
 本仓库包含 ExtraAcC 行为参考的 25 个物品、23 个专属技能和 29 个配方；这些数量是盘点范围，不能当作玩法或视觉完成率。测试结果应以配套交付报告中的精确 JAR SHA-256、证据路径及已验证层级为准。本次源码修改和隔离测试不代表已经公开发布或部署生产。
 
-ExtraAcC 原仓库固定快照没有 LICENSE。本轮未复制其代码、模型或材质；移动实体及专属美术仍有行为和表现差异，Liquid Shadow 仍采用原版 Drowned 外观。请先备份世界并在非生产实例验证。
+ExtraAcC 原仓库固定快照没有 LICENSE。本版含固定上游素材，逐文件来源见 `assets/academy/extraacc-provenance.json`，该记录不授予或变更素材许可；Java 实现未直接复制。移动实体及专属美术仍有行为和表现差异，Liquid Shadow 仍采用原版 Drowned 外观。请先备份世界并在非生产实例验证。
 
 ## 运行与安装
 
@@ -24,10 +26,10 @@ ExtraAcC 原仓库固定快照没有 LICENSE。本轮未复制其代码、模型
 | Minecraft | 1.21.1 |
 | NeoForge | 21.1.248 |
 | Java | 21 |
-| AcademyCraft | 0.0.19 |
+| AcademyCraft | 0.0.22-scex-wireless |
 | JEI / Jade | 可选，不是硬前置 |
 
-从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*-rebuilt.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。
+从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。
 
 ## 构建与测试
 

@@ -1,1 +1,6 @@
-{"parent":"minecraft:item/generated","textures":{"layer0":"academy:item/energy_unit_full"}}
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "academy:item/extraacc/ray_twister_active"
+  }
+}

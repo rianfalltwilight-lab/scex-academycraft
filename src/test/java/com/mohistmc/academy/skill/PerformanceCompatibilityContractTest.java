@@ -178,7 +178,7 @@ class PerformanceCompatibilityContractTest {
         assertTrue(charging.contains("held.getCapability(Capabilities.EnergyStorage.ITEM)"));
         assertTrue(charging.contains("level.getCapability("));
         assertTrue(charging.contains("Capabilities.EnergyStorage.BLOCK"));
-        assertTrue(charging.contains("ExternalEnergyConversion.ifToFe(requested)"));
+        assertTrue(charging.contains("ExternalEnergyConversion.FE_PER_IF"));
         assertTrue(charging.contains("receiver.receive(requested, true)"));
         assertTrue(charging.contains("receiver.receive(simulated, false)"));
         assertTrue(charging.contains("player.getLookAngle().scale(15.0)")

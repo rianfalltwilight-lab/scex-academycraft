@@ -30,21 +30,21 @@ public class ImagFusorMenu extends AcademyMenu {
         } else machineData = new SimpleContainerData(7);
         addDataSlots(machineData);
 
-        addAcademySlot(new Slot(container, ImagFusorBlockEntity.FLUID_INPUT_SLOT, 13, 10) {
+        addAcademySlot(new Slot(container, ImagFusorBlockEntity.FLUID_INPUT_SLOT, 15, 10) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return item.is(AcademyItems.MATTER_UNIT_PHASE_LIQUID.get());
             }
         });
 
-        addAcademySlot(new Slot(container, ImagFusorBlockEntity.EMPTY_UNIT_SLOT, 143, 10) {
+        addAcademySlot(new Slot(container, ImagFusorBlockEntity.EMPTY_UNIT_SLOT, 145, 10) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return false;
             }
         });
 
-        addAcademySlot(new Slot(container, ImagFusorBlockEntity.INPUT_SLOT, 13, 49) {
+        addAcademySlot(new Slot(container, ImagFusorBlockEntity.INPUT_SLOT, 15, 49) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 // Accept ingredient kinds before the player has assembled the full recipe count.
@@ -55,13 +55,13 @@ public class ImagFusorMenu extends AcademyMenu {
             }
         });
 
-        addAcademySlot(new Slot(container, ImagFusorBlockEntity.OUTPUT_SLOT, 143, 49) {
+        addAcademySlot(new Slot(container, ImagFusorBlockEntity.OUTPUT_SLOT, 145, 49) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return false;
             }
         });
-        addAcademySlot(new Slot(container, ImagFusorBlockEntity.ENERGY_INPUT_SLOT, 42, 80) {
+        addAcademySlot(new Slot(container, ImagFusorBlockEntity.ENERGY_INPUT_SLOT, 44, 80) {
             @Override public boolean mayPlace(ItemStack item) {
                 return com.mohistmc.academy.capability.EnergyItemHelper.isEnergyItem(item);
             }

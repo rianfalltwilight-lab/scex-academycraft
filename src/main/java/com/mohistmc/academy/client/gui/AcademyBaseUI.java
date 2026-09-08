@@ -82,6 +82,8 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
 
     /** 最近一次收到的节点列表 NBT */
     private static CompoundTag pendingNodeData = null;
+    private long nodeBackgroundRefreshAt = -1;
+    private long matrixBackgroundRefreshAt = -1;
     /** 最近一次收到的矩阵网络列表 NBT */
     private static CompoundTag pendingMatrixNetworkData = null;
 
@@ -461,6 +463,22 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
     @Override
     public void render(GuiGraphics stack, int mouseX, int mouseY, float p_97798_) {
         long gameTime = inv.player.level().getGameTime();
+        // Refresh already-open lists after another viewer renames a node or
+        // changes credentials. Do not replace an active password prompt's index.
+        if (panelActive && wirelessState == WirelessState.WIFI && waitPass < 0
+                && nodeResponseReceived && nodeBackgroundRefreshAt >= 0
+                && gameTime >= nodeBackgroundRefreshAt) {
+            nodesRequested = false;
+            nodeResponseReceived = false;
+            nodeBackgroundRefreshAt = -1;
+        }
+        if (panelActive && wirelessState == WirelessState.NODE && waitMatrixPassword < 0
+                && matrixNetworkResponseReceived && matrixBackgroundRefreshAt >= 0
+                && gameTime >= matrixBackgroundRefreshAt) {
+            matrixNetworksRequested = false;
+            matrixNetworkResponseReceived = false;
+            matrixBackgroundRefreshAt = -1;
+        }
         if (nodeRefreshAt >= 0 && gameTime >= nodeRefreshAt) {
             nodeRefreshAt = -1;
             nodesRequested = false;
@@ -505,7 +523,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
         }
 
         // 从静态缓存读取节点数据
-        if (this.wirelessState == WirelessState.WIFI && pendingNodeData != null) {
+        if (this.wirelessState == WirelessState.WIFI && waitPass < 0 && pendingNodeData != null) {
             this.serverNodes.clear();
             this.serverNodes.addAll(getCachedNodes());
             int ci = getConnectedIndex();
@@ -516,15 +534,17 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             clampNodePageOffset();
             this.nodeResponseReceived = true;
             this.nodeRequestDeadline = -1;
+            this.nodeBackgroundRefreshAt = gameTime + 20;
             clearNodeCache();
         }
-        if (this.wirelessState == WirelessState.NODE && pendingMatrixNetworkData != null) {
+        if (this.wirelessState == WirelessState.NODE && waitMatrixPassword < 0 && pendingMatrixNetworkData != null) {
             this.serverMatrixNetworks.clear();
             this.serverMatrixNetworks.addAll(getCachedMatrixNetworks());
             int ci = getConnectedMatrixNetworkIndex();
             this.activeMatrixNetwork = ci >= 0 && ci < this.serverMatrixNetworks.size() ? ci : -1;
             clampMatrixNetworkPageOffset();
             this.matrixNetworkResponseReceived = true;
+            this.matrixBackgroundRefreshAt = gameTime + 20;
             this.matrixNetworkAccessDenied = pendingMatrixNetworkData.getBoolean("accessDenied");
             this.matrixNetworkRequestDeadline = -1;
             pendingMatrixNetworkData = null;
@@ -650,12 +670,11 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             RenderSystem.setShaderColor(1, 1, 1, cnAlpha);
             renderPanelElement(stack, (160 / 2) - 16 - 6, 65 + (availIndex * 13), 11, 11, IC_UNCONNECTED);
             RenderSystem.disableBlend();
-            RenderUtils.renderText(stack, node.name(), this.leftPos + 32 - 4, this.topPos + 67 + (availIndex * 13));
-
             if (waitPass == i) {
-                String masked = "*".repeat(inputPass.length());
-                int pwX = this.leftPos + GUI_WIDTH / 2 - this.font.width(masked) / 2;
-                RenderUtils.renderText(stack, masked, pwX, this.topPos + 67 + (availIndex * 13));
+                renderWirelessPasswordInput(stack, availIndex, node.name(), node.pos(), inputPass.length());
+            } else {
+                RenderUtils.renderText(stack, font.plainSubstrByWidth(node.name(), 103),
+                        this.leftPos + 28, this.topPos + 67 + availIndex * 13);
             }
         }
     }
@@ -731,13 +750,35 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             RenderSystem.setShaderColor(1, 1, 1, connectHover ? 1.0f : 0.7f);
             renderPanelElement(stack, (160 / 2) - 16 - 6, 65 + row * 13, 11, 11, IC_UNCONNECTED);
             RenderSystem.disableBlend();
-            RenderUtils.renderText(stack, network.name(), this.leftPos + 28, this.topPos + 67 + row * 13);
             if (waitMatrixPassword == networkIndex) {
-                String masked = "*".repeat(matrixPasswordInput.length());
-                RenderUtils.renderText(stack, masked,
-                        this.leftPos + GUI_WIDTH / 2 - font.width(masked) / 2,
-                        this.topPos + 67 + row * 13);
+                renderWirelessPasswordInput(stack, row, network.name(), network.pos(), matrixPasswordInput.length());
+            } else {
+                RenderUtils.renderText(stack, font.plainSubstrByWidth(network.name(), 103),
+                        this.leftPos + 28, this.topPos + 67 + row * 13);
             }
+        }
+    }
+
+    /** Both wireless selectors share a visible focus state, including an empty password. */
+    private void renderWirelessPasswordInput(GuiGraphics graphics, int row, String name,
+                                             BlockPos target, int passwordLength) {
+        int y = topPos + 67 + row * 13;
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        graphics.fill(leftPos + 26, y - 2, leftPos + 135, y + 10, 0xE0183447);
+        graphics.fill(leftPos + 26, y + 9, leftPos + 135, y + 10, 0xFF73DFFF);
+        graphics.drawString(font, font.plainSubstrByWidth(name, 49), leftPos + 28, y, 0xFFFFFFFF, false);
+        graphics.fill(leftPos + 81, y - 1, leftPos + 133, y + 9, 0xFF10222F);
+        String masked = font.plainSubstrByWidth("*".repeat(passwordLength), 45);
+        graphics.drawString(font, masked, leftPos + 84, y, 0xFFFFFFFF, false);
+        // A steady caret cannot disappear during the user's initial focus check.
+        int caretX = leftPos + 84 + font.width(masked);
+        graphics.fill(caretX, y, caretX + 1, y + 8, 0xFF73DFFF);
+        String coordinates = target == null ? "" : target.getX() + ", " + target.getY() + ", " + target.getZ();
+        graphics.drawString(font, "密码：Enter 连接 / Esc 取消", leftPos + 13, topPos + 171, 0xFFFFFFFF, false);
+        if (target != null) {
+            // Coordinates stay readable even when a long name needs truncation.
+            graphics.renderTooltip(font, Component.literal(name + " [" + coordinates + "]"),
+                    leftPos + GUI_WIDTH + 4, y);
         }
     }
 

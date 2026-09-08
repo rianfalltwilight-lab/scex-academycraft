@@ -24,6 +24,9 @@ public abstract class BaseNodeMenu extends AcademyMenu {
     private final String initialNodeName;
     private final String ownerLabel;
     private final boolean canEditNode;
+    private String confirmedNodeName;
+    private long confirmedConfigRevision;
+    private boolean confirmedPasswordConfigured;
 
     public BaseNodeMenu(MenuType<?> menuType, int windowId, Inventory inv, FriendlyByteBuf data, boolean hasInventory) {
         super(menuType, windowId, inv, data, hasInventory);
@@ -32,6 +35,9 @@ public abstract class BaseNodeMenu extends AcademyMenu {
             initialNodeName = boundedNodeName(node.getNodeName());
             ownerLabel = ownerLabel(node);
             canEditNode = node.canManage(inv.player);
+            confirmedNodeName = initialNodeName;
+            confirmedConfigRevision = node.getConfigRevision();
+            confirmedPasswordConfigured = node.hasPasswordConfigured();
             nodeData = new ContainerData() {
                 @Override
                 public int get(int index) {
@@ -63,29 +69,32 @@ public abstract class BaseNodeMenu extends AcademyMenu {
             ownerLabel = data != null && data.readableBytes() > 0
                     ? data.readUtf(64) : "";
             canEditNode = data != null && data.readableBytes() > 0 && data.readBoolean();
+            confirmedNodeName = initialNodeName;
+            confirmedConfigRevision = data != null && data.readableBytes() >= Long.BYTES ? data.readLong() : 0;
+            confirmedPasswordConfigured = data != null && data.readableBytes() > 0 && data.readBoolean();
             nodeData = new SimpleContainerData(DATA_COUNT);
         }
         addDataSlots(nodeData);
 
-        addAcademySlot(new Slot(container, 0, 42, 10) {
+        addAcademySlot(new Slot(container, 0, 44, 10) {
             @Override
             public boolean mayPlace(ItemStack item) {
-                return canEditNode && EnergyItemHelper.isEnergyItem(item);
+                return canEditNode() && EnergyItemHelper.isEnergyItem(item);
             }
 
             @Override public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
-                return canEditNode;
+                return canEditNode();
             }
         });
 
-        addAcademySlot(new Slot(container, 1, 42, 80) {
+        addAcademySlot(new Slot(container, 1, 44, 80) {
             @Override
             public boolean mayPlace(ItemStack item) {
-                return canEditNode && EnergyItemHelper.isEnergyItem(item);
+                return canEditNode() && EnergyItemHelper.isEnergyItem(item);
             }
 
             @Override public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
-                return canEditNode;
+                return canEditNode();
             }
         });
     }
@@ -99,15 +108,38 @@ public abstract class BaseNodeMenu extends AcademyMenu {
     public boolean isConnected() { return nodeData.get(8) != 0; }
     public String getInitialNodeName() { return initialNodeName; }
 
-    /** Current public block-entity mirror; the opening snapshot is only a fallback. */
-    public String getCurrentNodeName() {
+    /** Opening data is authoritative even when the local BE still says Unnamed.
+     * Only a strictly newer public revision may supersede that snapshot. */
+    private void refreshConfirmedConfig() {
         if (pos != null && inv.player.level().getBlockEntity(pos) instanceof BaseNodeBlockEntity node) {
-            return boundedNodeName(node.getNodeName());
+            if (!inv.player.level().isClientSide() || node.getConfigRevision() > confirmedConfigRevision) {
+                acceptServerConfig(node.getNodeName(), node.hasPasswordConfigured(), node.getConfigRevision());
+            }
         }
-        return initialNodeName;
     }
+    public void acceptServerConfig(String name, boolean passwordConfigured, long revision) {
+        if (revision < confirmedConfigRevision) return;
+        confirmedNodeName = boundedNodeName(name);
+        confirmedConfigRevision = Math.max(0L, revision);
+        confirmedPasswordConfigured = passwordConfigured;
+    }
+    public String getCurrentNodeName() { refreshConfirmedConfig(); return confirmedNodeName; }
+    public long getCurrentConfigRevision() { refreshConfirmedConfig(); return confirmedConfigRevision; }
+    public boolean hasPasswordConfigured() { refreshConfirmedConfig(); return confirmedPasswordConfigured; }
     public String getOwnerLabel() { return ownerLabel; }
-    public boolean canEditNode() { return canEditNode; }
+    public boolean canEditNode() {
+        if (inv.player.level().isClientSide()) return canEditNode;
+        return pos != null && inv.player.level().getBlockEntity(pos) instanceof BaseNodeBlockEntity node
+                && node.canManage(inv.player) && stillValid(inv.player);
+    }
+
+    @Override
+    public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slotIndex) {
+        // Vanilla stack merging can bypass the destination slot's mayPlace check.
+        // Recheck this viewer before either direction of a shift-click transfer.
+        if (!canEditNode()) return ItemStack.EMPTY;
+        return super.quickMoveStack(player, slotIndex);
+    }
 
     /** Writes the complete, bounded client opening snapshot for all node tiers. */
     public static void writeOpeningData(FriendlyByteBuf buffer, BlockPos pos,
@@ -117,6 +149,8 @@ public abstract class BaseNodeMenu extends AcademyMenu {
         buffer.writeUtf(boundedNodeName(node.getNodeName()), NetworkInputLimits.NODE_NAME);
         buffer.writeUtf(ownerLabel(node), 64);
         buffer.writeBoolean(node.canManage(viewer));
+        buffer.writeLong(node.getConfigRevision());
+        buffer.writeBoolean(node.hasPasswordConfigured());
     }
 
     private static String ownerLabel(BaseNodeBlockEntity node) {

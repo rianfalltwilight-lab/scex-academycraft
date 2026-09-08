@@ -20,8 +20,10 @@ Optional add-on behavior reference used for the 0.0.17 compatibility work:
 
 That repository contained no LICENSE file at the fixed snapshot. Its registered
 items, recipes and ability behavior were used as an interoperability reference;
-its Java source and ExtraAcC-owned art were not imported verbatim. The 1.21.1
-implementation uses newly written code plus AcademyCraft or Minecraft resources.
+its Java source was not imported verbatim. Starting with the local 0.0.20 work,
+ExtraAcC art from the fixed snapshot is included. Exact files and hashes are in
+src/main/resources/assets/academy/extraacc-provenance.json. That record does not
+grant permission or relicense the assets; third-party rights remain unchanged.
 
 Legacy presentation assets were obtained from the official AcademyCraft 1.0.7
 CurseForge artifact, file 2582707, uploaded by weathfold on 2018-07-14.  This

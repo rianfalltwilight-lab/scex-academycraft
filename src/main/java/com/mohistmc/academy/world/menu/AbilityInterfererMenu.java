@@ -42,7 +42,7 @@ public final class AbilityInterfererMenu extends AcademyMenu {
         }
         addDataSlots(data);
 
-        addAcademySlot(new Slot(container, AbilityInterfererBlockEntity.BATTERY_SLOT, 139, 25) {
+        addAcademySlot(new Slot(container, AbilityInterfererBlockEntity.BATTERY_SLOT, 141, 25) {
             @Override public boolean mayPlace(ItemStack stack) {
                 return EnergyItemHelper.isEnergyItem(stack);
             }

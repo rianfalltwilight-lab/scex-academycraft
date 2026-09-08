@@ -37,7 +37,7 @@ public class SolarGenMenu extends AcademyMenu {
             machineData = new SimpleContainerData(3);
         }
         addDataSlots(machineData);
-        addAcademySlot(new Slot(container, 0, 42, 81) {
+        addAcademySlot(new Slot(container, 0, 44, 80) {
             @Override
             public boolean mayPlace(ItemStack item) {
                 return EnergyItemHelper.isEnergyItem(item);

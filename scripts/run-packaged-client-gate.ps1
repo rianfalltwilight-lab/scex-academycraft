@@ -18,6 +18,10 @@ param(
     [ValidateSet('', 'a', 'b')][string]$RecheckSessionRole = '',
     [string]$RecheckSessionAddress = 'localhost:25619',
     [switch]$RecheckSessionRestart,
+    [string]$NodeConfigRoot = '',
+    [ValidateSet('', 'a', 'b')][string]$NodeConfigRole = '',
+    [switch]$NodeConfigRestart,
+    [switch]$ExtraItemTextureVisualGate,
     [ValidateRange(0, 7680)][int]$Width = 0,
     [ValidateRange(0, 4320)][int]$Height = 0,
     [switch]$Wait
@@ -38,7 +42,7 @@ if ($GameDirectoryName -in @('.', '..')) { throw 'GameDirectoryName must be a ch
 if ($QuickPlaySingleplayer -and $QuickPlayMultiplayer) { throw 'Select only one quick-play destination' }
 $enabledGates = @($MachineVisualGate.IsPresent, $ExtraJeiGate.IsPresent,
     $ExtraSkillVisualGate.IsPresent, $ExtraJeiTransferGate.IsPresent,
-    (-not [string]::IsNullOrWhiteSpace($ConcurrentRoot)), (-not [string]::IsNullOrWhiteSpace($RecheckSessionRoot))).Where({ $_ })
+    (-not [string]::IsNullOrWhiteSpace($ConcurrentRoot)), (-not [string]::IsNullOrWhiteSpace($RecheckSessionRoot)), (-not [string]::IsNullOrWhiteSpace($NodeConfigRoot)), $ExtraItemTextureVisualGate.IsPresent).Where({ $_ })
 if ($enabledGates.Count -gt 1) { throw 'Select only one automated client gate per game directory' }
 $gameDirectory = Join-Path $instance $GameDirectoryName
 $nativeDirectory = Join-Path $gameDirectory 'natives'
@@ -252,6 +256,18 @@ if ($RecheckSessionRoot) {
     $jvmArguments.Add("-Dacademy.recheckSessionAddress=$RecheckSessionAddress")
     if ($RecheckSessionRestart) { $jvmArguments.Add('-Dacademy.recheckSessionRestart=true') }
 } elseif ($RecheckSessionRestart -or $RecheckSessionRole) { throw 'Recheck options require RecheckSessionRoot' }
+if ($ExtraItemTextureVisualGate) {
+    if (-not (Test-Path -LiteralPath (Join-Path $gameDirectory 'ISOLATED-ACCEPTANCE') -PathType Leaf)) { throw 'Texture gate isolated marker missing' }
+    $jvmArguments.Add('-Dacademy.extraItemTextureVisualGate=true')
+}
+if ($NodeConfigRoot) {
+    if (-not $NodeConfigRole) { throw 'Node configuration gate requires a role' }
+    if (-not (Test-Path -LiteralPath (Join-Path $NodeConfigRoot 'ISOLATED-ACCEPTANCE') -PathType Leaf)) { throw 'Node configuration isolated marker missing' }
+    $jvmArguments.Add('-Dacademy.nodeConfigGate=true')
+    $jvmArguments.Add("-Dacademy.nodeConfigRoot=$NodeConfigRoot")
+    $jvmArguments.Add("-Dacademy.nodeConfigRole=$NodeConfigRole")
+    if ($NodeConfigRestart) { $jvmArguments.Add('-Dacademy.nodeConfigRestart=true') }
+} elseif ($NodeConfigRestart -or $NodeConfigRole) { throw 'Node configuration options require NodeConfigRoot' }
 Add-ResolvedArguments -Destination $jvmArguments -Arguments @($base.arguments.jvm)
 Add-ResolvedArguments -Destination $jvmArguments -Arguments @($child.arguments.jvm)
 $gameArguments = [System.Collections.Generic.List[string]]::new()

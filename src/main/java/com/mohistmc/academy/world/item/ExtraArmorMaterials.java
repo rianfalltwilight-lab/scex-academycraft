@@ -12,9 +12,9 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 /** Clean-room 1.21 armor attributes matching the add-on's three special materials. */
 final class ExtraArmorMaterials {
-    static final Holder<ArmorMaterial> RESONANCE = material("iron", defenses(0, 0, 0, 0), 25, 1.0F);
-    static final Holder<ArmorMaterial> IMAGINARY = material("iron", defenses(0, 0, 0, 0), 0, 0.0F);
-    static final Holder<ArmorMaterial> PAPER = material("leather", defenses(2, 5, 6, 2), 0, 4.0F);
+    static final Holder<ArmorMaterial> RESONANCE = material("extraacc/reso", defenses(0, 0, 0, 0), 25, 1.0F);
+    static final Holder<ArmorMaterial> IMAGINARY = material("extraacc/noenergy", defenses(0, 0, 0, 0), 0, 0.0F);
+    static final Holder<ArmorMaterial> PAPER = material("extraacc/paper", defenses(2, 5, 6, 2), 0, 4.0F);
 
     private ExtraArmorMaterials() {}
 
@@ -29,12 +29,12 @@ final class ExtraArmorMaterials {
         return result;
     }
 
-    private static Holder<ArmorMaterial> material(String vanillaTexture,
+    private static Holder<ArmorMaterial> material(String texture,
                                                    Map<ArmorItem.Type, Integer> defense,
                                                    int enchantability, float toughness) {
         ArmorMaterial value = new ArmorMaterial(defense, enchantability,
                 SoundEvents.ARMOR_EQUIP_IRON, () -> Ingredient.EMPTY,
-                List.of(new ArmorMaterial.Layer(ResourceLocation.withDefaultNamespace(vanillaTexture))),
+                List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("academy", texture))),
                 toughness, 0.0F);
         return Holder.direct(value);
     }

@@ -13,22 +13,6 @@ class LegacyMachineScreenLayoutContractTest {
         return Files.readString(Path.of("src/main/java").resolve(path));
     }
 
-    @Test void playerAndMachineSlotsUseLegacyTextureOrigins() throws Exception {
-        assertTrue(source("com/mohistmc/academy/world/menu/AcademyMenu.java").contains("INV_X = 6"));
-        assertTrue(source("com/mohistmc/academy/world/menu/BaseNodeMenu.java").contains("0, 42, 10"));
-        assertTrue(source("com/mohistmc/academy/world/menu/SolarGenMenu.java").contains("0, 42, 81"));
-        assertTrue(source("com/mohistmc/academy/world/menu/WindGenBaseMenu.java").contains("0, 42, 80"));
-        assertTrue(source("com/mohistmc/academy/world/menu/WindGenMainMenu.java").contains("0, 78, 9"));
-        String phase = source("com/mohistmc/academy/world/menu/PhaseGenMenu.java");
-        assertTrue(phase.contains("0, 45, 12"));
-        assertTrue(phase.contains("1, 112, 51"));
-        assertTrue(phase.contains("2, 42, 80"));
-        String fusor = source("com/mohistmc/academy/world/menu/ImagFusorMenu.java");
-        assertTrue(fusor.contains("FLUID_INPUT_SLOT, 13, 10"));
-        assertTrue(fusor.contains("EMPTY_UNIT_SLOT, 143, 10"));
-        assertTrue(fusor.contains("ENERGY_INPUT_SLOT, 42, 80"));
-    }
-
     @Test void solarUsesTheOfficialWindbaseLayerRatherThanPhaseGeneratorArt() throws Exception {
         String solar = source("com/mohistmc/academy/client/block/gui/SolarGenGui.java");
         assertTrue(solar.contains("textures/guis/ui/ui_windbase.png"));
@@ -83,13 +67,14 @@ class LegacyMachineScreenLayoutContractTest {
         assertTrue(ui.contains("nodePageOffset - NODES_PER_PAGE"));
         assertTrue(ui.contains("availableNodeIndices()"));
         assertTrue(ui.contains("NetworkInputLimits.PASSWORD"));
-        assertTrue(ui.contains("\"*\".repeat(inputPass.length())"));
+        assertTrue(ui.contains("\"*\".repeat(passwordLength)"));
         String node = source("com/mohistmc/academy/client/block/gui/BaseNodeGui.java");
         // A password-only edit must not resend an unrelated name from this
         // viewer's opening snapshot. Both fields retain explicit empty optionals.
         assertTrue(node.contains("nameEdit ? java.util.Optional.of(nodeNameInput.toString()) : java.util.Optional.empty()"));
         assertTrue(node.contains("nameEdit ? java.util.Optional.empty() : java.util.Optional.of(nodePasswordInput.toString())"));
-        assertTrue(node.contains("if (!menu.actionSessionReady() || !menu.canEditNode() || menu.pos == null) return false;"));
+        assertTrue(node.contains("if (!menu.actionSessionReady()) { saveWaitingForSession = true; return false; }"));
+        assertTrue(node.contains("if (!menu.canEditNode() || menu.pos == null) { saveRejected = true; return false; }"));
         // Enter before the nonce arrives must leave focus and draft intact;
         // only a successfully submitted property ends editing.
         assertTrue(node.contains("if (submitNodeConfig()) editFocus = EditFocus.NONE;"));
@@ -100,11 +85,26 @@ class LegacyMachineScreenLayoutContractTest {
     @Test void nodeNamesRefreshFromThePublicMirrorWithoutReplacingUnsubmittedDrafts() throws Exception {
         String gui = source("com/mohistmc/academy/client/block/gui/BaseNodeGui.java");
         String menu = source("com/mohistmc/academy/world/menu/BaseNodeMenu.java");
-        assertTrue(menu.contains("return boundedNodeName(node.getNodeName());"));
+        assertTrue(menu.contains("node.getConfigRevision() > confirmedConfigRevision"));
+        assertTrue(menu.contains("if (revision < confirmedConfigRevision) return;"));
+        assertTrue(menu.contains("confirmedNodeName = initialNodeName;"));
         assertTrue(gui.contains("String current = menu.getCurrentNodeName();"));
         assertTrue(gui.contains("if (!nodeNameEdited && editFocus != EditFocus.NAME)"));
         assertFalse(gui.contains("if (nodeInputInitialized) return;"));
-        assertTrue(gui.contains("if (nameEdit) {\n            nodeNameEdited = false;\n        } else {\n            passwordEdited = false;\n            nodePasswordInput.setLength(0);\n        }"));
+        // A submitted field stays dirty until its own session-bound server
+        // receipt arrives. An unrelated pending/draft field must survive it.
+        assertTrue(gui.contains("result.actionToken().equals(pendingNameToken)"));
+        assertTrue(gui.contains("result.actionToken().equals(pendingPasswordToken)"));
+        assertTrue(gui.contains("if (!nameReply && !passwordReply) return;"));
+        assertTrue(gui.contains("result.accepted() && nodeNameInput.toString().equals(pendingNameValue)"));
+        assertTrue(gui.contains("result.accepted() && nodePasswordInput.toString().equals(pendingPasswordValue)"));
+        String submit = gui.substring(gui.indexOf("private boolean submitNodeConfig()"),
+                gui.indexOf("public final void acceptNodeConfigResult"));
+        assertFalse(submit.contains("nodeNameEdited = false"));
+        assertFalse(submit.contains("passwordEdited = false"));
+        String bridge = source("com/mohistmc/academy/client/ClientPacketBridge.java");
+        assertTrue(bridge.contains("mc.getConnection().getConnection() != sourceConnection"));
+        assertTrue(bridge.contains("mc.player.containerMenu == gui.getMenu()"));
         assertFalse(gui.contains("nodeNameEdited = false;\n        passwordEdited = false;"));
         assertTrue(gui.contains("if (submitNodeConfig()) editFocus = EditFocus.NONE;"));
     }

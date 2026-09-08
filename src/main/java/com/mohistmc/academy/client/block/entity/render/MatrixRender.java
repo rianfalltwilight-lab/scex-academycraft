@@ -63,8 +63,9 @@ public final class MatrixRender implements BlockEntityRenderer<MatrixBlockEntity
         for (int plate = 0; plate < PLATE_COUNT; plate++) {
             poseStack.pushPose();
 
-            // Match the y rotations from blockstates/matrix.json before the
-            // legacy per-plate orbit around the OBJ origin.
+            // BlockModelRotation bakes JSON y rotations with a NEGATIVE Y angle.
+            // Match that transform before the legacy orbit around the OBJ origin;
+            // a positive angle moves east/west orbit centres off the static base.
             if (facing != 0) {
                 poseStack.rotateAround(Axis.YP.rotationDegrees(facing), 0.5f, 0.5f, 0.5f);
             }
@@ -106,9 +107,9 @@ public final class MatrixRender implements BlockEntityRenderer<MatrixBlockEntity
 
     private static float facingDegrees(Direction facing) {
         return switch (facing) {
-            case EAST -> 90.0f;
-            case SOUTH -> 180.0f;
-            case WEST -> 270.0f;
+            case EAST -> -90.0f;
+            case SOUTH -> -180.0f;
+            case WEST -> -270.0f;
             default -> 0.0f;
         };
     }

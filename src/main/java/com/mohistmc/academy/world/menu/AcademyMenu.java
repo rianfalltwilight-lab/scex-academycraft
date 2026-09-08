@@ -19,10 +19,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public abstract class AcademyMenu extends AbstractContainerMenu {
 
     /** 背包栏坐标常量 */
-    /** Legacy 1.0.7 TechUIContainer origin.  The bundled UI texture is the
-     * original asset, so moving the slots to vanilla's usual x=8 visibly
-     * shifts every item and hit box two pixels to the right of its frame. */
-    public static final int INV_X = 6;
+    /** The shipped 352px artwork places the first slot centre at x=32px.
+     * At half scale a 16px item starts at x=8. Legacy container x=6 was
+     * two pixels left of this artwork; slot coordinates also define hit boxes. */
+    public static final int INV_X = 8;
     public static final int INV_Y = 105;
     public static final int HOTBAR_Y = 163;
 
