@@ -1,9 +1,9 @@
 # SCEX AcademyCraft 1.21.1
 
-最新冻结交付与验证边界 / Current frozen delivery: [release notes](docs/releases/0.0.27-scex-machineui.md).
-本版更新与验证：[说明](docs/releases/0.0.27-scex-machineui.md)。
+最新冻结交付与验证边界 / Current frozen delivery: [release notes](docs/releases/0.0.28-scex-machineui.md).
+本版更新与验证：[说明](docs/releases/0.0.28-scex-machineui.md)。
 
-**[0.0.27-scex-machineui：直接下载运行 JAR / Download JAR](https://github.com/rianfalltwilight-lab/scex-academycraft/releases/download/v0.0.27-scex-machineui/AcademyCraft-neoforge-1.21.1-0.0.27-scex-machineui.jar)** · [更新说明 / Release notes](docs/releases/0.0.27-scex-machineui.md)
+**[0.0.28-scex-machineui：直接下载运行 JAR / Download JAR](https://github.com/rianfalltwilight-lab/scex-academycraft/releases/download/v0.0.28-scex-machineui/AcademyCraft-neoforge-1.21.1-0.0.28-scex-machineui.jar)** · [更新说明 / Release notes](docs/releases/0.0.28-scex-machineui.md)
 
 > 本仓库由 **Space Creator EX（SCEX）服务器**维护。Minecraft 1.21.1 / NeoForge 重建、测试和公开版整理主要由 **OpenAI Codex** 在维护者监督下完成，是明确标注的 AI / Vibe Coding 项目。详见 [AI 参与开发声明](AI-GENERATED.md)。
 
@@ -16,7 +16,7 @@
 
 ## 当前状态
 
-当前开发版本为 **0.0.27-scex-machineui**。矩阵传能守恒、槽位对齐、无线输入和矩阵朝向已修复。客户端与服务端同步使用协议 v17/data-v4；NeoForge 精确锁定 21.1.248。详见 [本版更新与验证](docs/releases/0.0.27-scex-machineui.md)。
+当前开发版本为 **0.0.28-scex-machineui**。节点旧实例串名、EXP 布局与按钮叠字已修复；保留矩阵传能守恒、无线输入等修复。客户端与服务端同步使用协议 v18/data-v4；NeoForge 精确锁定 21.1.248。详见 [本版更新与验证](docs/releases/0.0.28-scex-machineui.md)。
 
 本仓库包含 ExtraAcC 行为参考的 25 个物品、23 个专属技能和 29 个配方；这些数量是盘点范围，不能当作玩法或视觉完成率。测试结果应以配套交付报告中的精确 JAR SHA-256、证据路径及已验证层级为准。本次源码和预发布附件已同步 GitHub；不代表生产部署。
 
@@ -29,7 +29,7 @@ ExtraAcC 原仓库固定快照没有 LICENSE。本版含固定上游素材，逐
 | Minecraft | 1.21.1 |
 | NeoForge | 21.1.248 |
 | Java | 21 |
-| AcademyCraft | 0.0.27-scex-machineui |
+| AcademyCraft | 0.0.28-scex-machineui |
 | JEI / Jade | 可选，不是硬前置 |
 
 从 Releases 下载最新的 `AcademyCraft-neoforge-1.21.1-*.jar`，同时放入客户端与服务端的 `mods` 目录。不要与其他使用 `academy` 模组 ID 的 AcademyCraft JAR 同时安装。准确 SHA-256 以对应 Release 页面为准。

@@ -404,9 +404,7 @@ public class SkillTreeGui extends AcademyScreen {
             actionTop = guiTop + scaled(82);
             actionWidth = scaled(45);
             drawLegacyActionButton(graphics, BUTTON_LEARN, actionLeft, actionTop, actionWidth,
-                    scaled(14), Component.translatable("ac.skill_tree.uplevel",
-                            Component.literal("Lv." + (data.getPlayerLevel() + 1))).getString(),
-                    mouseX, mouseY, true);
+                    scaled(14), mouseX, mouseY, true);
         }
     }
 
@@ -451,7 +449,7 @@ public class SkillTreeGui extends AcademyScreen {
         actionLeft = centerX - actionWidth / 2;
         actionTop = textY + scaled(54);
         drawLegacyActionButton(graphics, BUTTON_LEARN, actionLeft, actionTop, actionWidth,
-                scaled(16), Component.translatable("ac.skill_tree.learn").getString(), mouseX, mouseY, learnable);
+                scaled(16), mouseX, mouseY, learnable);
     }
 
     private void drawLegacyRequirements(GuiGraphics graphics, Skill skill, PlayerAbilityData data,
@@ -521,19 +519,21 @@ public class SkillTreeGui extends AcademyScreen {
         actionLeft = centerX - actionWidth / 2;
         actionTop = iconY + iconSize + scaled(31);
         drawLegacyActionButton(graphics, BUTTON_LEARN, actionLeft, actionTop, actionWidth,
-                scaled(16), Component.translatable("ac.skill_tree.learn").getString(), mouseX, mouseY, enabled);
+                scaled(16), mouseX, mouseY, enabled);
     }
 
     private void drawLegacyActionButton(GuiGraphics graphics, ResourceLocation texture, int x, int y,
-                                        int buttonWidth, int buttonHeight, String label,
+                                        int buttonWidth, int buttonHeight,
                                         int mouseX, int mouseY, boolean enabled) {
         boolean hovered = enabled && inside(mouseX, mouseY, x, y, buttonWidth, buttonHeight);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         graphics.setColor(1, 1, 1, enabled ? hovered ? 1f : .72f : .28f);
         graphics.blit(texture, x, y, buttonWidth, buttonHeight, 0, 0, 200, 64, 200, 64);
         graphics.setColor(1, 1, 1, 1);
-        String fitted = font.plainSubstrByWidth(label, Math.max(0, buttonWidth - 2));
-        graphics.drawCenteredString(font, fitted, x + buttonWidth / 2,
-                y + Math.max(1, (buttonHeight - 8) / 2), 0xFFFFFFFF);
+        RenderSystem.disableBlend();
+        // The upstream texture already contains LEARN; overlaying another label
+        // draws through those transparent glyphs and produces doubled text.
     }
 
     private static boolean inside(double mx, double my, int x, int y, int w, int h) {
@@ -559,25 +559,47 @@ public class SkillTreeGui extends AcademyScreen {
         PlayerAbilityData data = mc.player != null ? mc.player.getData(AcademyAttachments.PLAYER_ABILITY) : null;
         boolean hasAbility = data != null && data.hasAbility();
         int iconSize = scaled(32);
-        int abilityTop = guiTop + scaled(68);
+        int abilityTop = guiTop + scaled((187 - 32) / 2.0 - 10);
         ResourceLocation abilityIcon = hasAbility ? data.getCurrentAbility().getIcon() : LEGACY_NO_CATEGORY_ICON;
         RenderUtils.render(iconSize, iconSize, panelLeft, abilityTop, graphics, abilityIcon);
 
         String abilityName = hasAbility
                 ? Component.translatable("item.academy.factor_" + data.getCurrentAbility().id()).getString()
                 : "N/A";
-        int textLeft = panelLeft + scaled(32);
+        int textLeft = guiLeft + scaled(6 + (104 - 70) / 2.0 + 14);
         int textWidth = scaled(70);
         graphics.drawString(font, font.plainSubstrByWidth(abilityName, textWidth),
-                textLeft, abilityTop + scaled(2), 0xFFFFFFFF, false);
+                textLeft, guiTop + scaled(67.5 + 2), 0xFFFFFFFF, false);
         if (hasAbility) {
-            int progressTop = abilityTop + scaled(14);
-            drawLegacyBar(graphics, textLeft, progressTop, textWidth, data.getLevelProgress(), 0xFFFFFFFF);
-            graphics.drawString(font, "EXP " + Math.round(data.getLevelProgress() * 100) + "%",
-                    textLeft, abilityTop + scaled(18), 0xFFFFFFFF, false);
-            String level = "Lv." + data.getPlayerLevel();
-            graphics.drawString(font, level, panelLeft + scaled(72), abilityTop + scaled(18),
-                    0xFF1177D6, false);
+            // page_developer.xml defines a separate 70 x 1.5 EXP track at
+            // panel_ability (x=6,y=67.5) + (31,13.25). Energy tracks are 8px
+            // tall; sharing their renderer made EXP fill overlap its caption.
+            int progressLeft = guiLeft + scaled(37);
+            int progressTop = guiTop + scaled(80.75);
+            int progressRight = guiLeft + scaled(107);
+            int progressBottom = Math.max(progressTop + 1, guiTop + scaled(82.25));
+            graphics.fill(progressLeft, progressTop, progressRight, progressBottom, 0x4C666666);
+            int filled = (int) Math.round((progressRight - progressLeft)
+                    * Math.clamp(data.getLevelProgress(), 0, 1));
+            if (filled > 0) graphics.fill(progressLeft, progressTop,
+                    progressLeft + filled, progressBottom, 0xFFFFFFFF);
+            boolean upgradeVisible = devType != null && !readOnly && !isResetMode(data) && data.canLevelUp();
+            String exp = "EXP " + Math.round(data.getLevelProgress() * 100) + "%";
+            // The original narrow font fits beside btn_upgrade. Fit the vanilla
+            // glyphs to that same space instead of painting through the button.
+            float expScale = Math.min(8f / font.lineHeight * guiWidth / LEGACY_GUI_WIDTH,
+                    scaled(upgradeVisible ? 26 : 42) / (float) Math.max(1, font.width(exp)));
+            graphics.pose().pushPose();
+            graphics.pose().translate(guiLeft + scaled(36), guiTop + scaled(84), 0);
+            graphics.pose().scale(expScale, expScale, 1);
+            graphics.drawString(font, exp, 0, 0, 0xFFFFFFFF, false);
+            graphics.pose().popPose();
+            // SkillTree.scala removes text_level while the upgrade button is shown.
+            if (!upgradeVisible) {
+                String level = "Lv." + data.getPlayerLevel();
+                graphics.drawString(font, level, guiLeft + scaled(106.421875) - font.width(level),
+                        guiTop + scaled(83.5), 0xFF1177D6, false);
+            }
         }
 
         if (fromTerminal || devType == null) return;

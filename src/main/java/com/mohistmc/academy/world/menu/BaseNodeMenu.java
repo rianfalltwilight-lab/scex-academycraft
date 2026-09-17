@@ -5,6 +5,7 @@ import com.mohistmc.academy.energy.impl.NodeConn;
 import com.mohistmc.academy.energy.impl.WiWorldData;
 import com.mohistmc.academy.network.NetworkInputLimits;
 import com.mohistmc.academy.world.block.entity.BaseNodeBlockEntity;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -24,6 +25,7 @@ public abstract class BaseNodeMenu extends AcademyMenu {
     private final String initialNodeName;
     private final String ownerLabel;
     private final boolean canEditNode;
+    private final UUID nodeInstanceId;
     private String confirmedNodeName;
     private long confirmedConfigRevision;
     private boolean confirmedPasswordConfigured;
@@ -35,6 +37,7 @@ public abstract class BaseNodeMenu extends AcademyMenu {
             initialNodeName = boundedNodeName(node.getNodeName());
             ownerLabel = ownerLabel(node);
             canEditNode = node.canManage(inv.player);
+            nodeInstanceId = node.getNodeInstanceId();
             confirmedNodeName = initialNodeName;
             confirmedConfigRevision = node.getConfigRevision();
             confirmedPasswordConfigured = node.hasPasswordConfigured();
@@ -72,6 +75,7 @@ public abstract class BaseNodeMenu extends AcademyMenu {
             confirmedNodeName = initialNodeName;
             confirmedConfigRevision = data != null && data.readableBytes() >= Long.BYTES ? data.readLong() : 0;
             confirmedPasswordConfigured = data != null && data.readableBytes() > 0 && data.readBoolean();
+            nodeInstanceId = data != null && data.readableBytes() >= 2 * Long.BYTES ? data.readUUID() : null;
             nodeData = new SimpleContainerData(DATA_COUNT);
         }
         addDataSlots(nodeData);
@@ -108,11 +112,12 @@ public abstract class BaseNodeMenu extends AcademyMenu {
     public boolean isConnected() { return nodeData.get(8) != 0; }
     public String getInitialNodeName() { return initialNodeName; }
 
-    /** Opening data is authoritative even when the local BE still says Unnamed.
-     * Only a strictly newer public revision may supersede that snapshot. */
+    /** Opening data is authoritative even while the client still has the previous
+     * block at this position. Revisions are comparable only within one node instance. */
     private void refreshConfirmedConfig() {
         if (pos != null && inv.player.level().getBlockEntity(pos) instanceof BaseNodeBlockEntity node) {
-            if (!inv.player.level().isClientSide() || node.getConfigRevision() > confirmedConfigRevision) {
+            if (!inv.player.level().isClientSide() || node.getNodeInstanceId().equals(nodeInstanceId)
+                    && node.getConfigRevision() > confirmedConfigRevision) {
                 acceptServerConfig(node.getNodeName(), node.hasPasswordConfigured(), node.getConfigRevision());
             }
         }
@@ -151,6 +156,7 @@ public abstract class BaseNodeMenu extends AcademyMenu {
         buffer.writeBoolean(node.canManage(viewer));
         buffer.writeLong(node.getConfigRevision());
         buffer.writeBoolean(node.hasPasswordConfigured());
+        buffer.writeUUID(node.getNodeInstanceId());
     }
 
     private static String ownerLabel(BaseNodeBlockEntity node) {

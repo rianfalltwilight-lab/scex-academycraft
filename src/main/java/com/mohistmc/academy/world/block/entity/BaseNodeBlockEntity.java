@@ -37,6 +37,8 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     /** Client-side mirror of the runtime network membership flag. */
     private boolean clientConnected = false;
     private long configRevision;
+    /** Runtime identity: a replacement or reloaded node starts a new revision stream. */
+    private UUID nodeInstanceId = UUID.randomUUID();
     private boolean clientPasswordConfigured;
 
     public BaseNodeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -168,6 +170,8 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
     @Override
     public String getNodeName() { return nodeName; }
 
+    public UUID getNodeInstanceId() { return nodeInstanceId; }
+
     @Override
     public String getPassword() { return password; }
 
@@ -245,10 +249,13 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
         else if (tag.contains("energy")) energy = com.mohistmc.academy.energy.impl.EnergyBoundary.bounded(tag.getDouble("energy"), maxEnergy);
         if (tag.contains("node_bandwidth")) bandwidth = boundedFinite(tag.getDouble("node_bandwidth"), DEFAULT_BANDWIDTH, 1_000_000);
         long loadedRevision = Math.max(0L, tag.getLong("node_config_revision"));
+        boolean newInstance = tag.hasUUID("node_instance_id")
+                && !tag.getUUID("node_instance_id").equals(nodeInstanceId);
+        if (tag.hasUUID("node_instance_id")) nodeInstanceId = tag.getUUID("node_instance_id");
         // Public BE updates can arrive after a newer menu/ack snapshot. Ignore
         // older configuration while still applying unrelated energy/inventory data.
         boolean acceptConfig = level == null || !level.isClientSide()
-                || !tag.getBoolean("node_public_config") || loadedRevision >= configRevision;
+                || newInstance || !tag.getBoolean("node_public_config") || loadedRevision >= configRevision;
         if (acceptConfig) {
             String loadedName = tag.contains("node_name") ? tag.getString("node_name")
                     : tag.contains("nodeName") ? tag.getString("nodeName") : DEFAULT_NODE_NAME;
@@ -300,6 +307,8 @@ public abstract class BaseNodeBlockEntity extends AcademyContainerBlockEntity im
         tag.putDouble("node_bandwidth", bandwidth);
         tag.putString("node_name", nodeName);
         tag.putBoolean("node_public_config", true);
+        // Deliberately absent from saveAdditional: identity belongs to this loaded instance.
+        tag.putUUID("node_instance_id", nodeInstanceId);
         tag.putLong("node_config_revision", configRevision);
         tag.putBoolean("node_has_password", !password.isEmpty());
         if (ownerUUID != null) tag.putString("ownerUUID", ownerUUID.toString());

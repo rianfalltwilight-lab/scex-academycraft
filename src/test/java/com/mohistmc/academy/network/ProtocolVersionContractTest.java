@@ -3,5 +3,5 @@ import com.mohistmc.academy.AcademyCraft;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ProtocolVersionContractTest {
- @Test void protocolNamesPayloadAndDataGeneration(){assertEquals("academy-1.21.1-payload-v17-data-v4",AcademyCraft.NETWORK_PROTOCOL);}
+ @Test void protocolNamesPayloadAndDataGeneration(){assertEquals("academy-1.21.1-payload-v18-data-v4",AcademyCraft.NETWORK_PROTOCOL);}
 }
