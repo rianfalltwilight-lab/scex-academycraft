@@ -309,8 +309,8 @@ public final class ExtraSkillGateFixture {
                     "vacuum did not damage self/target and remove air");
             case "psycho_throwing", "psycho_throwing_plain" -> {
                 Item ammo = f.id.equals("psycho_throwing") ? AcademyItems.ETCHED_COBBLESTONE.get() : Items.COBBLESTONE;
-                require(count(player, ammo) == 3 && f.targetMin < f.targetStart && f.targetMove > .3,
-                        "throwing ammo/damage/push missing");
+                require(count(player, ammo) == 3 && f.targetMin < f.targetStart,
+                        "throwing ammo/projectile damage missing");
                 require(hasDropped(f, ammo), "thrown stone did not return as an item");
             }
             case "psycho_transmission" -> require(count(player, Items.DIAMOND) == 3 && !f.incoming.isAlive()

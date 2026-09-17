@@ -1,5 +1,11 @@
 package com.mohistmc.academy.world.item;
 
+import com.mohistmc.academy.network.LocationTeleportChunkPlan;
+import com.mohistmc.academy.skill.ability.teleporter.TeleportDestinations;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.UUID;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
@@ -7,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -17,9 +24,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.phys.Vec3;
 
 /** Overworld-only bind-and-return teleporter consuming 5,000 IF and one ender pearl. */
 public final class HandheldTeleporterItem extends ExtraEnergyItem {
+    private static final TicketType<UUID> TELEPORT_TICKET =
+            TicketType.create("academy_handheld_teleport", Comparator.<UUID>naturalOrder(), 20);
     public HandheldTeleporterItem() { super(10_000, 100); }
 
     @Override
@@ -49,15 +61,47 @@ public final class HandheldTeleporterItem extends ExtraEnergyItem {
                 net.minecraft.core.registries.Registries.DIMENSION, target.dimension()));
         if (destination == null || destination != serverPlayer.serverLevel())
             return InteractionResultHolder.fail(stack);
+        Vec3 feet = new Vec3(target.x(), target.y(), target.z());
+        if (!TeleportDestinations.isWithinBounds(player, destination, feet))
+            return InteractionResultHolder.fail(stack);
+        var box = player.getBoundingBox().move(feet.subtract(player.position()));
+        var chunks = new LinkedHashSet<LocationTeleportChunkPlan.Chunk>();
+        if (!LocationTeleportChunkPlan.addBox(chunks, box.minX, box.minZ, box.maxX, box.maxZ, 16))
+            return InteractionResultHolder.fail(stack);
+        UUID ticket = UUID.randomUUID();
+        var ticketed = new ArrayList<ChunkPos>();
+        try {
+            for (var chunk : chunks) {
+                ChunkPos pos = new ChunkPos(chunk.x(), chunk.z());
+                destination.getChunkSource().addRegionTicket(TELEPORT_TICKET, pos, 1, ticket);
+                ticketed.add(pos);
+                if (destination.getChunkSource().getChunk(chunk.x(), chunk.z(), ChunkStatus.FULL, true) == null)
+                    return InteractionResultHolder.fail(stack);
+            }
+            if (!TeleportDestinations.isSafe(player, destination, feet)) return InteractionResultHolder.fail(stack);
+            return teleport(serverPlayer, destination, stack, feet);
+        } finally {
+            for (ChunkPos pos : ticketed) destination.getChunkSource().removeRegionTicket(TELEPORT_TICKET, pos, 1, ticket);
+        }
+    }
+
+    private InteractionResultHolder<ItemStack> teleport(ServerPlayer player, ServerLevel destination,
+                                                       ItemStack stack, Vec3 feet) {
+        if (!player.getAbilities().instabuild
+                && (getEnergyStored(stack) < 5_000 || !ExtraItemActions.has(player, Items.ENDER_PEARL)))
+            return InteractionResultHolder.fail(stack);
+        // Same-level ServerPlayer.teleportTo commits synchronously. Check its result before payment.
+        Vec3 origin = player.position();
+        if (!player.teleportTo(destination, feet.x, feet.y, feet.z, Set.of(), player.getYRot(), player.getXRot()))
+            return InteractionResultHolder.fail(stack);
         if (!player.getAbilities().instabuild) {
             if (!ExtraItemActions.consumeOne(player, Items.ENDER_PEARL)) return InteractionResultHolder.fail(stack);
             consume(stack, 5_000);
         }
-        level.playSound(null, player.blockPosition(), SoundEvents.ENDERMAN_TELEPORT,
+        destination.playSound(null, net.minecraft.core.BlockPos.containing(origin), SoundEvents.ENDERMAN_TELEPORT,
                 SoundSource.PLAYERS, 0.8F, 1.0F);
-        serverPlayer.teleportTo(destination, target.x(), target.y(), target.z(), Set.of(),
-                player.getYRot(), player.getXRot());
-        destination.playSound(null, serverPlayer.blockPosition(), SoundEvents.ENDERMAN_TELEPORT,
+        player.fallDistance = 0;
+        destination.playSound(null, player.blockPosition(), SoundEvents.ENDERMAN_TELEPORT,
                 SoundSource.PLAYERS, 0.8F, 1.1F);
         return InteractionResultHolder.consume(stack);
     }

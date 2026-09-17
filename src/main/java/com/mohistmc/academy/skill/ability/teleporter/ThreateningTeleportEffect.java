@@ -63,7 +63,9 @@ public final class ThreateningTeleportEffect implements ChargingSkillEffect {
         ItemStack held = player.getMainHandItem();
         float exp = data.getProficiency(getId());
         Target target = target(player, lerpf(8, 15, exp));
+        var resourcesBefore = data.captureDynamicResources();
         if (!DynamicSkillRules.tryPay(data, getId(), lerpf(35, 100, exp), lerpf(18, 10, exp))) return false;
+        var resourcesPaid = data.captureDynamicResources();
 
         ItemStack one = held.copyWithCount(1);
         if (!player.getAbilities().instabuild) held.shrink(1);
@@ -74,9 +76,14 @@ public final class ThreateningTeleportEffect implements ChargingSkillEffect {
                     player.damageSources().source(net.minecraft.world.damagesource.DamageTypes.MAGIC, player),
                     PassiveDamageHelper.teleporter(player, data, target.entity, getId(), damage).damage());
         }
-        if (!targeted || player.getRandom().nextFloat() < .3f)
-            player.serverLevel().addFreshEntity(new ItemEntity(player.serverLevel(), target.dropPosition.x,
-                    target.dropPosition.y, target.dropPosition.z, one));
+        if ((!targeted || player.getRandom().nextFloat() < .3f) && !spawnDrop(player, target.dropPosition, one)) {
+            if (!player.getAbilities().instabuild) held.grow(1);
+            // A completed attack remains paid even if its recovery drop was rejected.
+            if (!targeted) {
+                data.rollbackDynamicPayment(resourcesBefore, resourcesPaid);
+                return false;
+            }
+        }
 
         com.mohistmc.academy.network.SafePayloadSender.send(player,
                 new com.mohistmc.academy.network.TeleporterTrailPacket(player.getX(),player.getY()-.5,player.getZ(),
@@ -86,6 +93,13 @@ public final class ThreateningTeleportEffect implements ChargingSkillEffect {
                 AcademySounds.TP_TP, SoundSource.PLAYERS, .5f, 1f);
         DynamicSkillRules.addExp(player, data, getId(), (targeted ? 1f : .2f) * .003f);
         return true;
+    }
+
+    private static boolean spawnDrop(ServerPlayer player, Vec3 destination, ItemStack stack) {
+        var level = player.serverLevel();
+        if (level.addFreshEntity(new ItemEntity(level, destination.x, destination.y, destination.z, stack))) return true;
+        return level.addFreshEntity(new ItemEntity(level, player.getX(), player.getEyeY() - .3,
+                player.getZ(), stack.copy()));
     }
 
     @Override public void onChargingRelease(ServerPlayer player, PlayerAbilityData data, int ticks) {

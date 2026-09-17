@@ -94,9 +94,10 @@ public class GroundShockEffect implements ChargingSkillEffect {
         float dropRate = lerpf(0.3f, 1.0f, exp);
         float ySpeed = (0.6f + level.random.nextFloat() * 0.3f) * lerpf(0.8f, 1.3f, exp);
 
-        int px = (int) player.getX();
-        int py = (int) player.getY() - 1;
-        int pz = (int) player.getZ();
+        BlockPos feet = player.blockPosition();
+        int px = feet.getX();
+        int py = feet.getY() - 1;
+        int pz = feet.getZ();
 
         Set<BlockPos> visitedBlocks = new HashSet<>();
         Set<Entity> visitedEntities = new HashSet<>();
@@ -119,7 +120,8 @@ public class GroundShockEffect implements ChargingSkillEffect {
             for (int i = 0; i < offsets.length; i++) {
                 if (level.random.nextDouble() >= probabilities[i]) continue;
                 Vec3 offset = offsets[i];
-                BlockPos pos = new BlockPos((int) (x + offset.x), (int) (y + offset.y), (int) (z + offset.z));
+                BlockPos pos = BlockPos.containing(x + offset.x, y + offset.y, z + offset.z);
+                if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)) continue;
                 BlockState state = level.getBlockState(pos);
                 if (state.isAir() || !visitedBlocks.add(pos)) continue;
 
@@ -163,6 +165,7 @@ public class GroundShockEffect implements ChargingSkillEffect {
                 for (int oy = -1; oy < 1; oy++) {
                     for (int oz = -5; oz < 5; oz++) {
                         BlockPos pos = new BlockPos(px + ox, py + oy, pz + oz);
+                        if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)) continue;
                         BlockState state = level.getBlockState(pos);
                         float hardness = state.getDestroySpeed(level, pos);
                         if (hardness >= 0 && hardness <= 0.6f && !state.isAir())
@@ -198,14 +201,16 @@ public class GroundShockEffect implements ChargingSkillEffect {
     }
 
     private static boolean mayBreak(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {
-        if (!level.mayInteract(player, pos)) return false;
+        if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)
+                || !level.mayInteract(player, pos)) return false;
         BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, pos, state, player);
         NeoForge.EVENT_BUS.post(event);
-        return !event.isCanceled();
+        return !event.isCanceled() && level.getBlockState(pos) == state;
     }
 
     private static double breakWithForce(ServerLevel level, ServerPlayer player, BlockPos pos,
                                          boolean mayDrop, float dropRate, double energy) {
+        if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)) return energy;
         BlockState state = level.getBlockState(pos);
         if (state.isAir() || state.is(Blocks.FARMLAND) || !state.getFluidState().isEmpty()) return energy;
         float hardness = state.getDestroySpeed(level, pos);

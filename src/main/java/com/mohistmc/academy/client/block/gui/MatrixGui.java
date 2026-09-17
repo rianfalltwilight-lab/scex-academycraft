@@ -79,7 +79,7 @@ public class MatrixGui extends AcademyBaseUI<MatrixMenu> {
                 px + 6, py + 7, 0xFFFFFFFF, false);
 
         String ssid = editingSsid ? ssidInput + "▌"
-                : menu.isInitialized() ? ssidInput.toString()
+                : menu.isInitialized() ? com.mohistmc.academy.client.gui.WirelessDisplayName.display(ssidInput.toString())
                 : ssidInput.isEmpty() ? "点击设置" : ssidInput.toString();
         graphics.drawString(font, trim("SSID: " + ssid), px + 6, py + 23, 0xFFCCCCCC, false);
         String password = passwordEdited ? "*".repeat(passwordInput.length()) + (editingPassword ? "▌" : "")

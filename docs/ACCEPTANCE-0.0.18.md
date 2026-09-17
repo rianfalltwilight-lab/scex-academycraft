@@ -23,7 +23,7 @@ Minecraft 1.21.1、NeoForge 21.1.248、Gradle wrapper 9.2.0、Java 21。参考�
 
 ```powershell
 $env:GRADLE_USER_HOME = '<AcademyCraft任务根绝对路径>\gradle-home'
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21.0.12'
+$env:JAVA_HOME = 'archived-evidence/Program Files\Java\jdk-21.0.12'
 $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 $toolchain = @('-Porg.gradle.java.installations.auto-detect=false',
   '-Porg.gradle.java.installations.auto-download=false',

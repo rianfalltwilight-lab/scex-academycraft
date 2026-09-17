@@ -8,12 +8,12 @@ import java.util.Set;
  * <p>The packet never supplies these coordinates. They are derived from the complete
  * server-owned mount graph after the selected saved location has been sanitized.</p>
  */
-final class LocationTeleportChunkPlan {
+public final class LocationTeleportChunkPlan {
     private LocationTeleportChunkPlan() {}
 
-    record Chunk(int x, int z) {}
+    public record Chunk(int x, int z) {}
 
-    static boolean addBox(Set<Chunk> chunks, double minX, double minZ,
+    public static boolean addBox(Set<Chunk> chunks, double minX, double minZ,
                           double maxX, double maxZ, int limit) {
         if (limit <= 0 || !Double.isFinite(minX) || !Double.isFinite(minZ)
                 || !Double.isFinite(maxX) || !Double.isFinite(maxZ)

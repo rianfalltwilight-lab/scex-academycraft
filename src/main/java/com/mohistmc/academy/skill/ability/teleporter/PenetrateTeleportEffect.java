@@ -42,7 +42,7 @@ public final class PenetrateTeleportEffect implements ChargingSkillEffect {
         Destination destination = destination(player, data);
         BlockPos pos = BlockPos.containing(destination.position);
         return destination.available && player.serverLevel().hasChunkAt(pos)
-                && player.serverLevel().getWorldBorder().isWithinBounds(pos);
+                && TeleportDestinations.isSafe(player, player.serverLevel(), destination.position);
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class PenetrateTeleportEffect implements ChargingSkillEffect {
         if (!destination.available) return false;
         BlockPos pos = BlockPos.containing(destination.position);
         if (!player.serverLevel().hasChunkAt(pos)
-                || !player.serverLevel().getWorldBorder().isWithinBounds(pos)) return false;
+                || !TeleportDestinations.isSafe(player, player.serverLevel(), destination.position)) return false;
         double distance = player.position().distanceTo(destination.position);
         if (!DynamicSkillRules.payForced(data, getId(),
                 (float) (distance * lerpf(14, 9, exp)), lerpf(80, 50, exp))) return false;
@@ -94,8 +94,10 @@ public final class PenetrateTeleportEffect implements ChargingSkillEffect {
         // The final 1.12.2 scanner and actual destination use player.posY
         // (feet); its client marker alone is lifted by eye height.
         Vec3 cursor = player.position();
+        Vec3 lastSafe = null;
         while (travelled <= maxDistance) {
-            boolean free = hasPlace(player.serverLevel(), cursor);
+            boolean free = TeleportDestinations.isSafe(player, player.serverLevel(), cursor);
+            if (free) lastSafe = cursor;
             if (stage == 0) {
                 if (!free) stage = 1;
             } else if (stage == 1) {
@@ -106,12 +108,7 @@ public final class PenetrateTeleportEffect implements ChargingSkillEffect {
             travelled += step;
             cursor = cursor.add(direction.scale(step));
         }
-        return new Destination(cursor, stage != 1);
-    }
-
-    private static boolean hasPlace(ServerLevel level, Vec3 point) {
-        BlockPos feet = new BlockPos((int) point.x, (int) point.y, (int) point.z);
-        return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
-                && level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty();
+        // Never return the wall which ended stage two, or an untested step beyond the CP/range limit.
+        return new Destination(lastSafe == null ? player.position() : lastSafe, stage != 1 && lastSafe != null);
     }
 }

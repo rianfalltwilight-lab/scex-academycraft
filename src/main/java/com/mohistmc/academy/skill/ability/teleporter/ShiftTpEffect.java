@@ -75,17 +75,20 @@ public final class ShiftTpEffect implements ChargingSkillEffect {
         Placement placement = placement(player, exp);
         if (placement == null) return false;
         ItemStack live = player.getMainHandItem();
-        if (!(live.getItem() instanceof BlockItem blockItem)) return false;
+        if (!(live.getItem() instanceof BlockItem)) return false;
 
         ServerLevel level = player.serverLevel();
         ItemStack before = live.copy();
         float cp = lerpf(260, 320, exp), overload = lerpf(40, 30, exp);
+        var resourcesBefore = data.captureDynamicResources();
         if (!DynamicSkillRules.tryPay(data, getId(), cp, overload)) return false;
+        var resourcesPaid = data.captureDynamicResources();
 
         boolean placed = false;
         if (mayPlace(player, placement)) {
             BlockState oldState = level.getBlockState(placement.target);
-            InteractionResult result = blockItem.useOn(
+            // NeoForge captures snapshots, posts single/multi-place events and restores canceled placements here.
+            InteractionResult result = live.useOn(
                     new UseOnContext(player, InteractionHand.MAIN_HAND, placement.hit));
             placed = result.consumesAction() && level.getBlockState(placement.target) != oldState;
             if (!placed) {
@@ -102,18 +105,23 @@ public final class ShiftTpEffect implements ChargingSkillEffect {
             Vec3 dropPos = placement.hit().getLocation();
             ItemEntity entity = new ItemEntity(level, dropPos.x, dropPos.y, dropPos.z, drop);
             if (!level.addFreshEntity(entity)) {
-                // Do not delete a player's block if another mod vetoes the
-                // remote entity spawn. The official outcome remains an item,
-                // with the caster position as a recoverable fallback.
-                player.drop(drop, false);
+                // ServerPlayer.drop does not report addFreshEntity's rejection. Check both attempts ourselves.
+                ItemEntity fallback = new ItemEntity(level, player.getX(), player.getEyeY() - .3,
+                        player.getZ(), drop.copy());
+                if (!level.addFreshEntity(fallback)) {
+                    player.setItemInHand(InteractionHand.MAIN_HAND, before.copy());
+                    data.rollbackDynamicPayment(resourcesBefore, resourcesPaid);
+                    return false;
+                }
             }
         }
 
         // BlockItem#useOn normally shrinks on a successful placement. Normalize
         // both placement and remote-drop branches to the final 1.12.2 rule:
         // exactly one block is consumed in survival, none in creative.
-        player.setItemInHand(InteractionHand.MAIN_HAND,
-                remainingAfterOneUse(before, player.getAbilities().instabuild));
+        ItemStack remaining = placed && !live.isEmpty() ? live.copy() : before.copy();
+        remaining.setCount(player.getAbilities().instabuild ? before.getCount() : before.getCount() - 1);
+        player.setItemInHand(InteractionHand.MAIN_HAND, remaining);
 
         Vec3 origin = player.position();
         int attacked = 0;
@@ -134,12 +142,6 @@ public final class ShiftTpEffect implements ChargingSkillEffect {
                 AcademySounds.TP_TP_SHIFT, SoundSource.PLAYERS, .5f, 1);
         DynamicSkillRules.addExp(player, data, getId(), (1 + attacked) * .002f);
         return true;
-    }
-
-    private static ItemStack remainingAfterOneUse(ItemStack before, boolean creative) {
-        ItemStack remaining = before.copy();
-        if (!creative) remaining.shrink(1);
-        return remaining;
     }
 
     @Override public void onChargingRelease(ServerPlayer player, PlayerAbilityData data, int ticks) {

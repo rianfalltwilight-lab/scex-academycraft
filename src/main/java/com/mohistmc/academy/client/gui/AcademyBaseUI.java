@@ -637,7 +637,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             renderPanelElement(stack, (160 / 2) - 16, 39, 11, 11, IC_CONNECTED);
             RenderSystem.disableBlend();
             String nodeName = activeNode < serverNodes.size() ? serverNodes.get(activeNode).name() : "Node" + activeNode;
-            RenderUtils.renderText(stack, nodeName, this.leftPos + 32, this.topPos + 41);
+            RenderUtils.renderText(stack, WirelessDisplayName.display(nodeName), this.leftPos + 32, this.topPos + 41);
         } else {
             renderPanelElement(stack, (160 / 2) - 16, 39, 11, 11, IC_UNCONNECTED);
             RenderSystem.disableBlend();
@@ -673,7 +673,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             if (waitPass == i) {
                 renderWirelessPasswordInput(stack, availIndex, node.name(), node.pos(), inputPass.length());
             } else {
-                RenderUtils.renderText(stack, font.plainSubstrByWidth(node.name(), 103),
+                RenderUtils.renderText(stack, font.plainSubstrByWidth(WirelessDisplayName.display(node.name()), 103),
                         this.leftPos + 28, this.topPos + 67 + availIndex * 13);
             }
         }
@@ -710,7 +710,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
         if (activeMatrixNetwork >= 0 && activeMatrixNetwork < serverMatrixNetworks.size()) {
             renderPanelElement(stack, (160 / 2) - 16, 39, 11, 11, IC_CONNECTED);
             RenderSystem.disableBlend();
-            RenderUtils.renderText(stack, serverMatrixNetworks.get(activeMatrixNetwork).name(),
+            RenderUtils.renderText(stack, WirelessDisplayName.display(serverMatrixNetworks.get(activeMatrixNetwork).name()),
                     this.leftPos + 32, this.topPos + 41);
         } else {
             renderPanelElement(stack, (160 / 2) - 16, 39, 11, 11, IC_UNCONNECTED);
@@ -753,7 +753,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
             if (waitMatrixPassword == networkIndex) {
                 renderWirelessPasswordInput(stack, row, network.name(), network.pos(), matrixPasswordInput.length());
             } else {
-                RenderUtils.renderText(stack, font.plainSubstrByWidth(network.name(), 103),
+                RenderUtils.renderText(stack, font.plainSubstrByWidth(WirelessDisplayName.display(network.name()), 103),
                         this.leftPos + 28, this.topPos + 67 + row * 13);
             }
         }
@@ -766,7 +766,7 @@ public abstract class AcademyBaseUI<T extends AcademyMenu> extends AbstractConta
         RenderSystem.setShaderColor(1, 1, 1, 1);
         graphics.fill(leftPos + 26, y - 2, leftPos + 135, y + 10, 0xE0183447);
         graphics.fill(leftPos + 26, y + 9, leftPos + 135, y + 10, 0xFF73DFFF);
-        graphics.drawString(font, font.plainSubstrByWidth(name, 49), leftPos + 28, y, 0xFFFFFFFF, false);
+        graphics.drawString(font, font.plainSubstrByWidth(WirelessDisplayName.display(name), 49), leftPos + 28, y, 0xFFFFFFFF, false);
         graphics.fill(leftPos + 81, y - 1, leftPos + 133, y + 9, 0xFF10222F);
         String masked = font.plainSubstrByWidth("*".repeat(passwordLength), 45);
         graphics.drawString(font, masked, leftPos + 84, y, 0xFFFFFFFF, false);

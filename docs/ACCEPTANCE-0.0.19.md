@@ -37,9 +37,9 @@
 ## 构建
 
 ```powershell
-$env:JAVA_HOME='C:\Program Files\Java\jdk-21.0.12'
+$env:JAVA_HOME='archived-evidence/Program Files\Java\jdk-21.0.12'
 $env:PATH="$env:JAVA_HOME\bin;$env:PATH"
-.\gradlew.bat --offline --no-daemon --no-configuration-cache --no-build-cache --rerun-tasks '-Porg.gradle.java.installations.auto-detect=false' '-Porg.gradle.java.installations.auto-download=false' '-Porg.gradle.java.installations.paths=C:\Program Files\Java\jdk-21.0.12' test build runGameTestServer
+.\gradlew.bat --offline --no-daemon --no-configuration-cache --no-build-cache --rerun-tasks '-Porg.gradle.java.installations.auto-detect=false' '-Porg.gradle.java.installations.auto-download=false' '-Porg.gradle.java.installations.paths=archived-evidence/Program Files\Java\jdk-21.0.12' test build runGameTestServer
 ```
 
 `BUILD-INFO.txt`由脚本生成；归档与哈希共用 `scripts/source-files.ps1` 清单。最终交付需从源码ZIP在独立目录完整重建并比对JAR字节。

@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="Internal validation fixture"
+[[mods]]
+modId="academy_audit"
+version="1"
+displayName="AcademyCraft isolated audit probes"
+[[dependencies.academy_audit]]
+modId="academy"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"

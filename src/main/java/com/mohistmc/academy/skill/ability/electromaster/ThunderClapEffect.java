@@ -10,8 +10,7 @@ import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
+import com.mohistmc.academy.world.effect.VisualLightning;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -85,12 +84,7 @@ public class ThunderClapEffect implements ChargingSkillEffect {
 
         Vec3 targetPos = getTargetPos(player);
 
-        LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
-        if (lightning != null) {
-            lightning.moveTo(targetPos.x, targetPos.y, targetPos.z);
-            lightning.setVisualOnly(false);
-            level.addFreshEntity(lightning);
-        }
+        VisualLightning.send(level, targetPos);
 
         float damage = getDamage(exp, ticks);
         float range = getRange(exp);

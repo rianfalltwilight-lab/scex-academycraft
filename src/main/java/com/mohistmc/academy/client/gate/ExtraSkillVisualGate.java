@@ -4,6 +4,7 @@ import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.client.KeyInputHandler;
 import com.mohistmc.academy.gametest.ExtraSkillGateFixture;
 import com.mohistmc.academy.skill.AcademyAttachments;
+import com.mohistmc.academy.world.entity.PsychoProjectileEntity;
 import com.mojang.logging.LogUtils;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -38,9 +39,18 @@ public final class ExtraSkillVisualGate {
     private static long began = System.nanoTime();
     private static volatile boolean busy;
     private static volatile String failure, serverLine;
-    private static boolean early, middle, burst, end;
+    private static boolean early, middle, burst, end, projectileView;
     private static String pendingCapture;
     private static volatile boolean captured;
+    private static final List<String> CASES = selectedCases();
+    private static List<String> selectedCases() {
+        String selection = System.getProperty("academy.extraSkillVisualGate.cases", "");
+        if (selection.isBlank()) return ExtraSkillGateFixture.CASES;
+        List<String> cases = List.of(selection.split(","));
+        if (!ExtraSkillGateFixture.CASES.containsAll(cases) || cases.stream().distinct().count() != cases.size())
+            throw new IllegalArgumentException("Invalid Extra skill visual gate selection");
+        return cases;
+    }
     private static final List<String> EVIDENCE = new ArrayList<>();
     private static final List<String> CAPTURES = new ArrayList<>();
     private ExtraSkillVisualGate() {}
@@ -80,8 +90,26 @@ public final class ExtraSkillVisualGate {
                 var current = ExtraSkillGateFixture.observation();
                 if (current != null && current.testCase().equals(id()) && current.activated()) {
                     if (activatedAt < 0) activatedAt = ticks;
+                    if (projectileCase() && !projectileView) {
+                        // Direction is already fixed at launch. Observe the flight off axis, clear
+                        // of the full-size stone spawned around the first-person eye position.
+                        projectileView = true;
+                        mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+                        mc.player.setYRot(-60); mc.player.setXRot(-8);
+                    }
                     if (!early && ticks > activatedAt && pendingCapture == null) {
                         early = true; capture(mc, "early", current.metrics());
+                    }
+                    if (projectileCase() && early && !middle && pendingCapture == null) {
+                        var shots = mc.level.getEntitiesOfClass(PsychoProjectileEntity.class,
+                                mc.player.getBoundingBox().inflate(32), shot -> shot.getOwner() == mc.player && !shot.isReturning());
+                        if (shots.size() == 1 && shots.getFirst().tickCount >= 5) {
+                            var shot = shots.getFirst();
+                            middle = true;
+                            capture(mc, "flight", current.metrics() + " clientProjectile=" + shot.getId()
+                                    + " age=" + shot.tickCount + " eyeDistance=" + shot.position().distanceTo(mc.player.getEyePosition())
+                                    + " position=" + shot.position() + " movement=" + shot.getDeltaMovement());
+                        }
                     }
                 }
             }
@@ -89,7 +117,7 @@ public final class ExtraSkillVisualGate {
                 case PREPARE -> {
                     release(mc);
                     if (mc.screen != null) mc.player.closeContainer();
-                    early = middle = burst = end = false; activatedAt = -1; serverLine = null;
+                    early = middle = burst = end = projectileView = false; activatedAt = -1; serverLine = null;
                     mc.options.setCameraType(selfView(id()) ? CameraType.THIRD_PERSON_BACK : CameraType.FIRST_PERSON);
                     server(mc, player -> ExtraSkillGateFixture.prepare(player, id())); enter(Stage.WAIT_PREPARE);
                 }
@@ -148,13 +176,14 @@ public final class ExtraSkillVisualGate {
                         end = true; capture(mc, "end", observed.metrics()); return;
                     }
                     if (pendingCapture != null) return;
+                    require(!projectileCase() || middle, "moving client projectile was not captured");
                     server(mc, player -> serverLine = ExtraSkillGateFixture.finish(player)); enter(Stage.WAIT_FINISH);
                 }
                 case WAIT_FINISH -> {
                     if (busy) return;
                     require(serverLine != null && serverLine.startsWith("PASS "), "server verdict absent");
                     evidence(serverLine); index++;
-                    if (index == ExtraSkillGateFixture.CASES.size()) {
+                    if (index == CASES.size()) {
                         release(mc); writeResult(mc, "PASS", null); stage = Stage.FINISHED; mc.stop();
                     } else enter(Stage.PREPARE);
                 }
@@ -165,7 +194,10 @@ public final class ExtraSkillVisualGate {
             release(mc); writeResult(mc, "FAIL", problem.toString()); stage = Stage.FINISHED; mc.stop();
         }
     }
-    private static String id() { return ExtraSkillGateFixture.CASES.get(index); }
+    private static String id() { return CASES.get(index); }
+    private static boolean projectileCase() {
+        return List.of("psycho_throwing", "psycho_throwing_plain", "psycho_needling").contains(id());
+    }
     private static int slot() { return id().equals("paper_drill") ? 0 : 2; }
     private static KeyMapping key() { return slot() == 0 ? KeyInputHandler.SKILL_1 : KeyInputHandler.SKILL_3; }
     private static boolean selfView(String id) {
@@ -210,7 +242,7 @@ public final class ExtraSkillVisualGate {
             lines.add("scope=real client input/environment server assertions and rendered frame capture");
             lines.add("visualInspection=REQUIRED; screenshots alone do not prove visible effects or original-animation fidelity");
             lines.add("progression=PRELEARNED FIXTURE; no survival unlock proof");
-            lines.add("completedCases=" + index + "/" + ExtraSkillGateFixture.CASES.size());
+            lines.add("completedCases=" + index + "/" + CASES.size());
             lines.add("stage=" + stage); if (reason != null) lines.add("reason=" + reason);
             lines.add("screenshots=" + CAPTURES.size()); lines.addAll(EVIDENCE);
             Files.write(mc.gameDirectory.toPath().resolve("academy-extra-skill-gate-result.txt"), lines, StandardCharsets.UTF_8);

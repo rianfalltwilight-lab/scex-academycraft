@@ -74,9 +74,8 @@ final class TeleporterLegacySourceContractTest {
         assertTrue(shift.contains("instanceof EnderDragonPart"));
         assertTrue(shift.contains("level.playSound(null, origin.x, origin.y, origin.z"));
         assertTrue(shift.contains("(1 + attacked) * .002f"));
-        assertTrue(shift.contains("new ItemEntity(level")
-                        && shift.contains("remainingAfterOneUse(before"),
-                "final 1.12.2 ShiftTP must drop an unplaceable remote block and consume exactly one");
+        assertTrue(shift.contains("live.useOn(") && !shift.contains("blockItem.useOn("),
+                "ShiftTP must use the NeoForge ItemStack placement transaction; item conservation is covered by AuditGameTests");
     }
 
     @Test

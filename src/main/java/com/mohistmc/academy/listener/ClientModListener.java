@@ -138,6 +138,8 @@ public final class ClientModListener {
         event.registerEntityRenderer(AcademyEntities.SILBARN.get(), SilbarnRenderer::new);
         event.registerEntityRenderer(AcademyEntities.MAG_HOOK.get(),
                 context -> new ThrownItemRenderer<>(context, 1.0F, true));
+        event.registerEntityRenderer(AcademyEntities.PSYCHO_STONE.get(), com.mohistmc.academy.client.render.PsychoProjectileRenderer::new);
+        event.registerEntityRenderer(AcademyEntities.PSYCHO_NEEDLE.get(), com.mohistmc.academy.client.render.PsychoProjectileRenderer::new);
         event.registerEntityRenderer(AcademyEntities.PAPER_PLANE.get(),
                 context -> new ThrownItemRenderer<>(context, 1.0F, true));
         event.registerEntityRenderer(AcademyEntities.ORE_HIGHLIGHT.get(), OreHighlightRenderer::new);

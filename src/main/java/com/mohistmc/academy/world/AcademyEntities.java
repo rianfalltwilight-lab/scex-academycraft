@@ -17,6 +17,7 @@ import com.mohistmc.academy.world.entity.MagManipBlockEntity;
 import com.mohistmc.academy.world.entity.EntitySilbarn;
 import com.mohistmc.academy.world.entity.EntityMagHook;
 import com.mohistmc.academy.world.entity.ExtraPaperPlaneEntity;
+import com.mohistmc.academy.world.entity.PsychoProjectileEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -47,6 +48,13 @@ public class AcademyEntities {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("mag_hook_projectile"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PsychoProjectileEntity>> PSYCHO_STONE = ENTITIES.register("psycho_cobblestone",
+            () -> EntityType.Builder.<PsychoProjectileEntity>of((type, level) -> new PsychoProjectileEntity(type, level, PsychoProjectileEntity.Kind.STONE), MobCategory.MISC)
+                    .sized(1, 1).fireImmune().clientTrackingRange(4).updateInterval(1).noSummon().build("psycho_cobblestone"));
+    public static final DeferredHolder<EntityType<?>, EntityType<PsychoProjectileEntity>> PSYCHO_NEEDLE = ENTITIES.register("psycho_needle",
+            () -> EntityType.Builder.<PsychoProjectileEntity>of((type, level) -> new PsychoProjectileEntity(type, level, PsychoProjectileEntity.Kind.NEEDLE), MobCategory.MISC)
+                    .sized(.5F, .5F).fireImmune().clientTrackingRange(4).updateInterval(1).noSummon().build("psycho_needle"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ExtraPaperPlaneEntity>> PAPER_PLANE = ENTITIES.register("paper_plane",
             () -> EntityType.Builder.of(ExtraPaperPlaneEntity::new, MobCategory.MISC)

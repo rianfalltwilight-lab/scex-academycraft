@@ -460,6 +460,27 @@ public class PlayerAbilityData implements com.mohistmc.academy.skill.ability.mel
         currentOverload = Math.max(0, currentOverload - overloadCost);
     }
 
+    /** Snapshot immediately around a payment, before running fallible external hooks. */
+    public record DynamicResources(float cp, float overload, float growthCp, float growthOverload,
+                                   int cpDelay, int overloadDelay) {}
+
+    public DynamicResources captureDynamicResources() {
+        return new DynamicResources(currentCp, currentOverload, usageMaxCp, usageMaxOverload,
+                cpRecoveryDelay, overloadRecoveryDelay);
+    }
+
+    /** Undo only this payment's deltas; retain resource changes made by external hooks. */
+    public void rollbackDynamicPayment(DynamicResources before, DynamicResources paid) {
+        if (isDevMode()) return;
+        currentCp += before.cp - paid.cp;
+        currentOverload += before.overload - paid.overload;
+        usageMaxCp += before.growthCp - paid.growthCp;
+        usageMaxOverload += before.growthOverload - paid.growthOverload;
+        if (cpRecoveryDelay == paid.cpDelay) cpRecoveryDelay = before.cpDelay;
+        if (overloadRecoveryDelay == paid.overloadDelay) overloadRecoveryDelay = before.overloadDelay;
+        recalculateMaxResources(false);
+    }
+
     public void restoreCp(float amount) {
         if (!Float.isFinite(amount) || amount <= 0) return;
         currentCp = Math.min(maxCp, currentCp + amount);

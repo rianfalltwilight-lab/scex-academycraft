@@ -237,6 +237,18 @@ tasks.named('test', Test).configure {
     }
 }
 
+// Opt-in adversarial runtime probes. These classes never enter the release JAR.
+sourceSets {
+    auditTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+tasks.register('auditTestJar', Jar) {
+    archiveClassifier = 'audit-tests'
+    from sourceSets.auditTest.output
+}
+
 // Legacy 1.0.7 achievement graph. Every generated criterion is awarded only by
 // LegacyAdvancementBridge after its authoritative server-side condition succeeds.
 def legacyAdvancementParents = [

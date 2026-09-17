@@ -70,7 +70,7 @@ public final class FlashingTargeting {
         BlockPos destination = BlockPos.containing(result);
         // Keep the legacy coordinates without force-loading chunks or crossing
         // the world border. These are transport boundaries, not floor checks.
-        if (!level.hasChunkAt(destination) || !level.getWorldBorder().isWithinBounds(destination)) return null;
+        if (!level.hasChunkAt(destination) || !TeleportDestinations.isSafe(player, level, result)) return null;
         return result;
     }
 
@@ -109,9 +109,8 @@ public final class FlashingTargeting {
             case EAST -> { x += .6; y = hit.getBlockPos().getY() + 1.7; }
         }
         if (face.getAxis().isHorizontal()) {
-            // Java's cast-to-int truncation is deliberate: this matches the
-            // exact 1.0.7 head-clearance check, including negative coordinates.
-            BlockPos head = new BlockPos((int) x, (int) (y + 1), (int) z);
+            // Fix the inherited negative-coordinate truncation instead of inspecting a neighbouring cell.
+            BlockPos head = BlockPos.containing(x, y + 1, z);
             if (level.hasChunkAt(head) && !level.getBlockState(head).isAir()) y -= 1.25;
         }
         return new Vec3(x, y, z);

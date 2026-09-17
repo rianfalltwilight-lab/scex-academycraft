@@ -27,6 +27,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -252,19 +253,23 @@ public class RailgunEffect implements ChargingSkillEffect {
 
     public static double traceBarrier(ServerLevel level, ServerPlayer player, Vec3 origin, Vec3 direction,
                                        double maxDistance, double energy) {
+        if (!Double.isFinite(energy) || energy <= 0) return 0;
         BlockPos previous = null;
         for (double d = 0; d <= maxDistance && energy > 0; d += .2) {
             BlockPos pos = BlockPos.containing(origin.add(direction.scale(d)));
             if (pos.equals(previous)) continue;
             previous = pos;
+            if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)
+                    || !level.mayInteract(player, pos)) return Math.max(0, d - .01);
             var state = level.getBlockState(pos);
             if (state.isAir()) continue;
             float hardness = state.getDestroySpeed(level, pos);
             if (hardness < 0 || state.is(Blocks.BEDROCK) || energy < hardness) return Math.max(0, d - .01);
             BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, pos, state, player);
             NeoForge.EVENT_BUS.post(event);
-            if (event.isCanceled()) return Math.max(0, d - .01);
+            if (event.isCanceled() || level.getBlockState(pos) != state) return Math.max(0, d - .01);
             energy -= Math.max(0, hardness);
+            if (energy <= 0) return Math.max(0, d - .01);
         }
         return maxDistance;
     }
@@ -276,23 +281,30 @@ public class RailgunEffect implements ChargingSkillEffect {
             BlockPos pos = BlockPos.containing(origin.add(direction.scale(d)));
             if (pos.equals(previous)) continue;
             previous = pos;
+            if (!level.hasChunkAt(pos) || !level.getWorldBorder().isWithinBounds(pos)
+                    || !level.mayInteract(player, pos)) break;
             var state = level.getBlockState(pos);
             if (state.isAir()) continue;
             float hardness = state.getDestroySpeed(level, pos);
             if (hardness < 0 || state.is(Blocks.BEDROCK) || energy < hardness) break;
             BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, pos, state, player);
             NeoForge.EVENT_BUS.post(event);
-            if (event.isCanceled()) break;
-            level.destroyBlock(pos, level.random.nextFloat() < .05f, player);
+            if (event.isCanceled() || level.getBlockState(pos) != state
+                    || !level.destroyBlock(pos, level.random.nextFloat() < .05f, player)) break;
             energy -= Math.max(0, hardness);
             if (level.random.nextFloat() < .05f) {
                 BlockPos neighbor = pos.relative(net.minecraft.core.Direction.getRandom(level.random));
+                if (!level.hasChunkAt(neighbor) || !level.getWorldBorder().isWithinBounds(neighbor)
+                        || !level.mayInteract(player, neighbor)) continue;
                 var neighborState = level.getBlockState(neighbor);
                 float neighborHardness = neighborState.getDestroySpeed(level, neighbor);
                 if (!neighborState.isAir() && neighborHardness >= 0 && energy >= neighborHardness) {
                     BlockEvent.BreakEvent neighborEvent = new BlockEvent.BreakEvent(level, neighbor, neighborState, player);
                     NeoForge.EVENT_BUS.post(neighborEvent);
-                    if (!neighborEvent.isCanceled()) { level.destroyBlock(neighbor, level.random.nextFloat() < .05f, player); energy -= neighborHardness; }
+                    if (!neighborEvent.isCanceled() && level.getBlockState(neighbor) == neighborState
+                            && level.destroyBlock(neighbor, level.random.nextFloat() < .05f, player)) {
+                        energy -= neighborHardness;
+                    }
                 }
             }
         }
@@ -301,6 +313,9 @@ public class RailgunEffect implements ChargingSkillEffect {
     private void reflectDamage(ServerPlayer reflector) {
         ServerLevel level = reflector.serverLevel();
         Vec3 start = reflector.getEyePosition(), direction = reflector.getLookAngle().normalize(), end = start.add(direction.scale(REFLECT_RANGE));
+        // Upstream Raytrace.traceLiving clips the reflected ray against blocks before selecting an entity.
+        end = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, reflector)).getLocation();
         LivingEntity best = null; double bestDistance = Double.MAX_VALUE;
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(start, end).inflate(.8),
                 e -> e != reflector && e.isAlive())) {

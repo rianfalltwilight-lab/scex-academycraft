@@ -34,8 +34,11 @@ public class DevNormalGui extends AcademyBaseUI<DevNormalMenu> {
 
     private void updateLayout() {
         compactFallback = width < GUI_WIDTH || height < GUI_HEIGHT;
-        compactLayout = width < RegularMachineLayout.DEVELOPER_COMPOSITION_WIDTH;
-        if (compactLayout && !compactFallback) {
+        compactLayout = panelActive || width < RegularMachineLayout.DEVELOPER_COMPOSITION_WIDTH;
+        if (panelActive && !compactFallback) {
+            // The wireless replacement page has no right-hand information card.
+            leftPos = RegularMachineLayout.contentLeftWithSidebar(width, GUI_WIDTH);
+        } else if (compactLayout && !compactFallback) {
             leftPos = RegularMachineLayout.machineLeft(width, true);
         } else if (!compactFallback) {
             leftPos = RegularMachineLayout.developerMenuLeft(width);
@@ -45,7 +48,13 @@ public class DevNormalGui extends AcademyBaseUI<DevNormalMenu> {
     public void openNetworkPage(BlockPos expectedPos, int expectedContainerId) {
         if (menu.pos != null && menu.pos.equals(expectedPos) && menu.containerId == expectedContainerId) {
             openInitialWirelessPanel();
+            updateLayout();
         }
+    }
+
+    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        updateLayout();
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     /** Exposes only the production panel state to the isolated real-client gate. */
@@ -88,6 +97,7 @@ public class DevNormalGui extends AcademyBaseUI<DevNormalMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        updateLayout();
         if (compactFallback) return true;
         if (panelActive && button == 0 && isHoveringButton(
                 getSidebarLeft(), getSidebarTop(), 18, 18, mouseX, mouseY)) {

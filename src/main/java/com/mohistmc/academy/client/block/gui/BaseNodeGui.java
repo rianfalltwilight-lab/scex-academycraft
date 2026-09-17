@@ -97,7 +97,8 @@ public abstract class BaseNodeGui<T extends BaseNodeMenu> extends AcademyBaseUI<
     @Override
     protected void renderEnergyInfoPanel(GuiGraphics graphics) {
         initializeNodeInput();
-        String name = nodeNameInput + (editFocus == EditFocus.NAME ? "▌" : "");
+        String name = editFocus == EditFocus.NAME ? nodeNameInput + "▌"
+                : com.mohistmc.academy.client.gui.WirelessDisplayName.display(nodeNameInput.toString());
         String password = passwordEdited ? "*".repeat(nodePasswordInput.length())
                 + (editFocus == EditFocus.PASSWORD ? "▌" : "")
                 : menu.hasPasswordConfigured() ? "已设置（修改）" : "公开（未设）";

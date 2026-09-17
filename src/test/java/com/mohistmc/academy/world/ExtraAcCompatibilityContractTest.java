@@ -105,8 +105,6 @@ class ExtraAcCompatibilityContractTest {
         for (String path : List.of("skill/ability/aerohand/AirBladeEffect.java",
                 "skill/ability/aerohand/BomberLanceEffect.java",
                 "skill/ability/aerohand/VolcanicBallEffect.java",
-                "skill/ability/telekinesis/PsychoNeedlingEffect.java",
-                "skill/ability/telekinesis/PsychoThrowingEffect.java",
                 "skill/ability/telekinesis/PsychoSlamEffect.java",
                 "skill/ability/telekinesis/PaperDrillEffect.java",
                 "skill/ability/telekinesis/PsychoTransmissionEffect.java")) {

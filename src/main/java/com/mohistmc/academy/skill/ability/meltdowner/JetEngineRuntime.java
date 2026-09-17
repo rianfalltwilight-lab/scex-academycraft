@@ -4,11 +4,13 @@ import com.mohistmc.academy.AcademyCraft;
 import com.mohistmc.academy.skill.AbilityInterferenceService;
 import com.mohistmc.academy.skill.AcademyAttachments;
 import com.mohistmc.academy.skill.PlayerAbilityData;
+import com.mohistmc.academy.skill.ability.teleporter.TeleportDestinations;
 import com.mohistmc.academy.skill.passive.PassiveDamageHelper;
 import com.mohistmc.academy.world.effect.EffectHelper;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -34,7 +36,8 @@ public final class JetEngineRuntime {
     private JetEngineRuntime() {}
 
     static void start(ServerPlayer player, Vec3 target, float damage) {
-        float prior = player.getAbilities().getWalkingSpeed();
+        State previous = ACTIVE.get(player.getUUID());
+        float prior = previous == null ? player.getAbilities().getWalkingSpeed() : previous.priorWalkSpeed;
         ACTIVE.put(player.getUUID(), new State(player.position(), target, damage, 0, prior));
         if (player.isPassenger()) player.stopRiding();
         player.getAbilities().setWalkingSpeed(.07f);
@@ -67,7 +70,7 @@ public final class JetEngineRuntime {
         Vec3 wanted = state.start.add(velocity.scale(next));
         Vec3 before = player.position();
         Vec3 movement = wanted.subtract(before);
-        if (!player.serverLevel().noCollision(player, player.getBoundingBox().move(movement))) {
+        if (!canTravel(player, wanted, movement)) {
             stop(player, true);
             return;
         }
@@ -82,6 +85,10 @@ public final class JetEngineRuntime {
             PassiveDamageHelper.meltdownerAttack(player, data, target, "jet_engine", state.damage);
         }
 
+        // Damage hooks can synchronously terminate or replace this context (death/dimension change).
+        // Never emit its remaining effects or resurrect it after a lifecycle callback removed it.
+        if (ACTIVE.get(player.getUUID()) != state) return;
+
         EffectHelper.jetMesh(player.serverLevel(), before, wanted);
         EffectHelper.meltdownBurst(player.serverLevel(), player.getX(), player.getY() + .8,
                 player.getZ(), 11, .3);
@@ -92,6 +99,30 @@ public final class JetEngineRuntime {
             ACTIVE.put(player.getUUID(), new State(state.start, state.target,
                     state.damage, next, state.priorWalkSpeed));
         }
+    }
+
+    private static boolean canTravel(ServerPlayer player, Vec3 wanted, Vec3 movement) {
+        var level = player.serverLevel();
+        if (!TeleportDestinations.isWithinBounds(player, level, wanted)) return false;
+        AABB box = player.getBoundingBox();
+        AABB swept = box.expandTowards(movement);
+        // Also require neighboring chunks consulted for protruding block shapes. Refuse an
+        // unexpected long jump instead of letting a changed player position trigger an unbounded scan.
+        if (swept.getXsize() > 32 || swept.getZsize() > 32
+                || !level.hasChunksAt(BlockPos.containing(swept.minX - 1, swept.minY - 1, swept.minZ - 1),
+                        BlockPos.containing(swept.maxX + 1, swept.maxY + 1, swept.maxZ + 1))) return false;
+        Vec3 center = box.getCenter();
+        Vec3 end = center.add(movement);
+        // Sweep the player's full box along the straight teleport segment against each voxel box.
+        // The tiny inset allows contact with a floor without treating it as penetration.
+        for (var shape : level.getBlockCollisions(player, swept)) {
+            for (AABB solid : shape.toAabbs()) {
+                AABB obstacle = solid.inflate(box.getXsize() / 2 - 1.0E-7,
+                        box.getYsize() / 2 - 1.0E-7, box.getZsize() / 2 - 1.0E-7);
+                if (obstacle.contains(center) || obstacle.clip(center, end).isPresent()) return false;
+            }
+        }
+        return level.noCollision(player, box.move(movement));
     }
 
     private static LivingEntity firstLiving(ServerPlayer player, Vec3 from, Vec3 to) {

@@ -76,7 +76,9 @@ public final class PsychoTransmissionEffect implements SkillEffect {
         if (target == null || target.distanceToSqr(player) < 1) return;
         float distanceSquared = (float) target.distanceToSqr(player);
         float cp = (4F - 2F * proficiency) * distanceSquared;
+        var resourcesBefore = data.captureDynamicResources();
         if (!DynamicSkillRules.tryPay(data, "psycho_transmission", cp, 2.5F)) return;
+        var resourcesPaid = data.captureDynamicResources();
 
         int before = target.getItem().getCount();
         Vec3 from = player.getEyePosition();
@@ -84,8 +86,8 @@ public final class PsychoTransmissionEffect implements SkillEffect {
         target.playerTouch(player);
         int after = target.isAlive() ? target.getItem().getCount() : 0;
         if (before - after <= 0) {
-            data.refundDynamic(DynamicSkillRules.cp("psycho_transmission", cp),
-                    DynamicSkillRules.overload("psycho_transmission", 2.5F));
+            // The per-tick upkeep remains paid; only the unsuccessful pickup is rolled back.
+            data.rollbackDynamicPayment(resourcesBefore, resourcesPaid);
             return;
         }
         ServerLevel level = player.serverLevel();
@@ -118,12 +120,11 @@ public final class PsychoTransmissionEffect implements SkillEffect {
     }
 
     private static boolean hasInventorySpace(ServerPlayer player, ItemStack incoming) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack slot = player.getInventory().getItem(i);
-            if (slot.isEmpty() || ItemStack.isSameItemSameComponents(slot, incoming)
-                    && slot.getCount() < slot.getMaxStackSize()) return true;
-        }
-        return player.getAbilities().instabuild;
+        // Inventory.add uses empty main slots and existing mergeable stacks (including offhand),
+        // not empty armor/offhand slots. Damaged stacks require an empty main slot.
+        var inventory = player.getInventory();
+        return player.hasInfiniteMaterials() || inventory.getFreeSlot() >= 0
+                || !incoming.isDamaged() && inventory.getSlotWithRemainingSpace(incoming) >= 0;
     }
 
     private static void terminate(ServerPlayer player, PlayerAbilityData data, boolean cooldown) {

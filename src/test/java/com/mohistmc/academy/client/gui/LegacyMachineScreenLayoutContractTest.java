@@ -154,7 +154,7 @@ class LegacyMachineScreenLayoutContractTest {
     @Test void developerScreensHaveInteractiveCompactPagesAndExternalFullCanvasSidebars() throws Exception {
         for (String name : new String[] {"DevNormalGui.java", "DevAdvancedGui.java"}) {
             String gui = source("com/mohistmc/academy/client/block/gui/" + name);
-            assertTrue(gui.contains("compactLayout = width < RegularMachineLayout.DEVELOPER_COMPOSITION_WIDTH"), name);
+            assertTrue(gui.contains("compactLayout = panelActive || width < RegularMachineLayout.DEVELOPER_COMPOSITION_WIDTH"), name);
             assertTrue(gui.contains("RegularMachineLayout.machineLeft(width, true)"), name);
             assertTrue(gui.contains("RegularMachineLayout.developerMenuLeft(width)"), name);
             assertTrue(gui.contains("renderCompactDeveloperPanel"), name);

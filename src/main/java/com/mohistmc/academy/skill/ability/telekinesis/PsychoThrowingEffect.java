@@ -1,21 +1,15 @@
 package com.mohistmc.academy.skill.ability.telekinesis;
 
 import com.mohistmc.academy.config.DynamicSkillRules;
-import com.mohistmc.academy.skill.ability.SkillRaycast;
-import com.mohistmc.academy.skill.AcademyDamageHelper;
 import com.mohistmc.academy.skill.PlayerAbilityData;
 import com.mohistmc.academy.skill.ability.DynamicOneShotSkillEffect;
 import com.mohistmc.academy.world.AcademyItems;
-import com.mohistmc.academy.world.effect.EffectHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.Vec3;
 
 /** Throws one cobblestone projectile; etched stone is faster, stronger and cheaper. */
 public final class PsychoThrowingEffect implements DynamicOneShotSkillEffect {
@@ -41,50 +35,38 @@ public final class PsychoThrowingEffect implements DynamicOneShotSkillEffect {
         if (ammo == null) return false;
         float p = data.getProficiency(getId());
         float multiplier = ammo.etched ? 1.0F : 1.5F;
+        var resourcesBefore = data.captureDynamicResources();
         if (!DynamicSkillRules.tryPay(data, getId(), rawCp(p) * multiplier,
                 rawOverload(p) * multiplier)) return false;
-        if (!player.getAbilities().instabuild) ammo.stack.shrink(1);
-        perform(player, data, ammo.etched);
+        var resourcesPaid = data.captureDynamicResources();
+        ItemStack returned = ammo.stack.isEmpty() ? new ItemStack(AcademyItems.ETCHED_COBBLESTONE.get())
+                : ammo.stack.copyWithCount(1);
+        if (!perform(player, data, ammo.etched, returned, ammo.stack)) {
+            data.rollbackDynamicPayment(resourcesBefore, resourcesPaid);
+            return false;
+        }
         return true;
     }
 
-    @Override public void execute(ServerPlayer player, PlayerAbilityData data) { perform(player, data, true); }
-
-    private static Ammo findAmmo(ServerPlayer player) {
-        if (player.getAbilities().instabuild) return new Ammo(ItemStack.EMPTY, true);
-        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-            ItemStack stack = player.getInventory().getItem(slot);
-            if (stack.is(AcademyItems.ETCHED_COBBLESTONE.get())) return new Ammo(stack, true);
-            if (stack.is(Items.COBBLESTONE)) return new Ammo(stack, false);
-        }
-        return null;
+    @Override public void execute(ServerPlayer player, PlayerAbilityData data) {
+        executeAndReport(player, data);
     }
 
-    private static void perform(ServerPlayer player, PlayerAbilityData data, boolean etched) {
+    private static Ammo findAmmo(ServerPlayer player) {
+        ItemStack stack = PsychoAmmo.find(player, item -> item.is(AcademyItems.ETCHED_COBBLESTONE.get()) || item.is(Items.COBBLESTONE));
+        return stack == null ? null : new Ammo(stack, stack.isEmpty() || stack.is(AcademyItems.ETCHED_COBBLESTONE.get()));
+    }
+
+    private static boolean perform(ServerPlayer player, PlayerAbilityData data, boolean etched,
+                                   ItemStack returned, ItemStack consumed) {
         float p = data.getProficiency("psycho_throwing");
         ServerLevel level = player.serverLevel();
-        Vec3 from = player.getEyePosition();
-        Vec3 direction = player.getLookAngle().normalize();
-        Vec3 intended = from.add(direction.scale(etched ? 40 : 32));
-        var trace = SkillRaycast.trace(player, from, intended);
-        LivingEntity target = trace.firstEntity();
-        Vec3 impact = trace.firstImpact();
-        float damage = (12 + 4 * p) * (etched ? 1.25F : 1.0F);
-        if (target != null && AcademyDamageHelper.hurt(player, target,
-                player.damageSources().playerAttack(player), DynamicSkillRules.damage("psycho_throwing", damage))) {
-            double acceleration = (0.1 + 0.05 * p) * (etched ? 1.5 : 1.0) * 20;
-            target.push(direction.x * acceleration, direction.y * acceleration, direction.z * acceleration);
-            target.hurtMarked = true;
-        }
-        ItemStack returned = new ItemStack(etched ? AcademyItems.ETCHED_COBBLESTONE.get() : Items.COBBLESTONE);
-        ItemEntity drop = new ItemEntity(level, impact.x, impact.y, impact.z, returned);
-        drop.setDefaultPickUpDelay();
-        level.addFreshEntity(drop);
-        EffectHelper.psychoBurst(level, impact.x, impact.y, impact.z, 12, 0.35);
+        if (!PsychoAmmo.launch(player, consumed, returned, p, false)) return false;
         level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(),
                 SoundSource.PLAYERS, 0.8F, etched ? 1.2F : 0.9F);
         if (!data.isDevMode()) DynamicSkillRules.addExp(player, data, "psycho_throwing",
                 0.002F - 0.001F * p);
+        return true;
     }
 
     @Override public int getCooldownTicks(float p) { return Math.round(40 - 20 * Math.clamp(p, 0, 1)); }

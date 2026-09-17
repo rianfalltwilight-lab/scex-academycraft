@@ -218,7 +218,7 @@ public final class ExtraAdversarialGameTests {
                 if (!drill.onChargingTick(player, data, 5)) {
                     helper.fail("drill fixture did not start"); return;
                 }
-            } else effect.execute(player, data);
+            } else executeWithFlight(helper, player, data, effect);
             if (victim.getHealth() != before) {
                 helper.fail(effect.getId() + " damaged a real hitbox entirely behind a glass pane"); return;
             }
@@ -238,6 +238,24 @@ public final class ExtraAdversarialGameTests {
     @GameTest(template = "empty") public static void slamStopsAtThinWall(GameTestHelper h) { thinWall(h, new PsychoSlamEffect()); }
     @GameTest(template = "empty") public static void paperDrillStopsAtThinWall(GameTestHelper h) { thinWall(h, new PaperDrillEffect()); }
 
+    private static void executeWithFlight(GameTestHelper helper, ServerPlayer player,
+                                          com.mohistmc.academy.skill.PlayerAbilityData data, SkillEffect effect) {
+        if (!(effect instanceof PsychoThrowingEffect || effect instanceof PsychoNeedlingEffect)) {
+            effect.execute(player, data); return;
+        }
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(effect instanceof PsychoNeedlingEffect
+                ? com.mohistmc.academy.world.AcademyItems.NEEDLE.get() : Items.COBBLESTONE, 2));
+        helper.assertTrue(effect.executeAndReport(player, data), "Projectile collision fixture failed to launch");
+        var shots = helper.getLevel().getEntitiesOfClass(com.mohistmc.academy.world.entity.PsychoProjectileEntity.class,
+                player.getBoundingBox().inflate(3), e -> e.getOwner() == player);
+        helper.assertTrue(shots.size() == 1, "Expected exactly one collision-test projectile");
+        var shot = shots.getFirst();
+        try {
+            for (int i = 0; i < 20 && !shot.isRemoved(); i++) shot.tick();
+            helper.assertTrue(shot.isRemoved(), "Flight did not reach the test surface");
+        } finally { shot.discard(); }
+    }
+
     private static void firstIntersection(GameTestHelper helper, SkillEffect effect) {
         var player = caster(helper, effect instanceof AirBladeEffect || effect instanceof BomberLanceEffect
                 || effect instanceof VolcanicBallEffect ? AbilityCategory.AEROHAND : AbilityCategory.TELEKINESIS);
@@ -246,7 +264,7 @@ public final class ExtraAdversarialGameTests {
         try {
             var data = player.getData(AcademyAttachments.PLAYER_ABILITY);
             data.setProficiency(effect.getId(), 1);
-            effect.execute(player, data);
+            executeWithFlight(helper, player, data, effect);
             if (small.getHealth() != 200 || large.getHealth() >= 200) {
                 helper.fail(effect.getId() + " chose entity origin instead of the first ray/real-box intersection"); return;
             }

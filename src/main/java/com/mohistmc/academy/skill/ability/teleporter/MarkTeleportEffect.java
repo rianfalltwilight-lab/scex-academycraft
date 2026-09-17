@@ -47,7 +47,7 @@ public final class MarkTeleportEffect implements ChargingSkillEffect {
         float exp=d.getProficiency(getId());double cpb=lerpf(12,4,exp);
         Vec3 dest=state.destination; // immutable last server-validated marker; do not release at a newer view ray
         BlockPos block=BlockPos.containing(dest);
-        if(!p.serverLevel().hasChunkAt(block)||!p.serverLevel().getWorldBorder().isWithinBounds(block))return false;
+        if(!p.serverLevel().hasChunkAt(block)||!TeleportDestinations.isSafe(p,p.serverLevel(),dest))return false;
         double distance=p.position().distanceTo(dest);if(distance<3||!com.mohistmc.academy.config.DynamicSkillRules.payForced(d,getId(),(float)(distance*cpb),lerpf(40,20,exp)))return false;
         ServerLevel level=p.serverLevel();
         TeleportSkillHelper.teleport(p,dest);

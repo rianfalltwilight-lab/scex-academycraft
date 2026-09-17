@@ -376,8 +376,8 @@ public class SkillTreeGui extends AcademyScreen {
     private void drawSelectedActions(GuiGraphics graphics, int mouseX, int mouseY) {
         actionTop = -1;
         actionWidth = 0;
-        networkActionLeft = guiLeft + scaled(8);
-        networkActionTop = guiTop + scaled(115);
+        networkActionLeft = guiLeft + scaled(4 + (108.5 - 100) / 2);
+        networkActionTop = guiTop + scaled((187 - 16) / 2.0 + 29);
         networkActionWidth = scaled(100);
         if (devType == null || readOnly) {
             networkActionTop = -1;
@@ -597,11 +597,15 @@ public class SkillTreeGui extends AcademyScreen {
         graphics.blit(LEGACY_LIST_BUTTON, lineLeft, nodeButtonTop, lineWidth, scaled(16),
                 0, 0, 300, 32, 300, 32);
         graphics.setColor(1, 1, 1, 1);
-        RenderSystem.disableBlend();
+        // icon_node.png is a white RGB image whose silhouette is in its alpha channel.
+        // Keep alpha blending through the icon draw or it becomes a solid square.
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         int nodeIcon = scaled(12);
         RenderUtils.render(nodeIcon, nodeIcon, lineLeft + scaled(3), nodeButtonTop + scaled(2), graphics, LEGACY_NODE_ICON);
+        RenderSystem.disableBlend();
         String displayedNode = linkedNodeName.isBlank()
-                ? Component.translatable("ac.skill_tree.not_connected").getString() : linkedNodeName;
+                ? Component.translatable("ac.skill_tree.not_connected").getString() : WirelessDisplayName.display(linkedNodeName);
         graphics.drawString(font, font.plainSubstrByWidth(displayedNode, lineWidth - scaled(22)),
                 lineLeft + scaled(18), nodeButtonTop + scaled(4), 0xFFFFFFFF, false);
 
